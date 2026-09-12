@@ -43,7 +43,10 @@ struct Root
     int letter;       // index into letters
     int accidental;   // semitones, -1 flat, +1 sharp
 
-    int pitchClass() const { return ((letterPitches[letter] + accidental) % 12 + 12) % 12; }
+    int pitchClass() const
+    {
+        return ((letterPitches[static_cast<size_t> (letter)] + accidental) % 12 + 12) % 12;
+    }
 };
 
 /*  Both spellings of every pitch class, plus Cb. C# major and Db major are the
@@ -119,17 +122,18 @@ inline const std::vector<Highlight> highlights {
 */
 inline std::string spellAs (int letter, int pitchClass)
 {
-    letter = ((letter % 7) + 7) % 7;
+    const auto index = static_cast<size_t> (((letter % 7) + 7) % 7);
+    const std::string name { letters[index] };
 
-    const int offset = ((pitchClass - letterPitches[letter] + 6) % 12 + 12) % 12 - 6;
+    const int offset = ((pitchClass - letterPitches[index] + 6) % 12 + 12) % 12 - 6;
 
     switch (offset)
     {
-        case -2: return std::string (letters[letter]) + "bb";
-        case -1: return std::string (letters[letter]) + "b";
-        case  0: return letters[letter];
-        case  1: return std::string (letters[letter]) + "#";
-        case  2: return std::string (letters[letter]) + "x";
+        case -2: return name + "bb";
+        case -1: return name + "b";
+        case  0: return name;
+        case  1: return name + "#";
+        case  2: return name + "x";
         default: return {};
     }
 }

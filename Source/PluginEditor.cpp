@@ -41,10 +41,10 @@ ScaleViewEditor::ScaleViewEditor (ScaleViewProcessor& p)
 
     setResizable (true, true);
 
-    if (auto* constrainer = getConstrainer())
+    if (auto* sizeConstrainer = getConstrainer())
     {
-        constrainer->setFixedAspectRatio (iconAspect);
-        constrainer->setSizeLimits (200, 100, 1600, 800);
+        sizeConstrainer->setFixedAspectRatio (iconAspect);
+        sizeConstrainer->setSizeLimits (200, 100, 1600, 800);
     }
 
     const auto size = processor.getEditorSize();

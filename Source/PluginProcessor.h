@@ -25,6 +25,8 @@ public:
     void releaseResources() override {}
     bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlock (juce::AudioBuffer<double>&, juce::MidiBuffer&) override;
+    bool supportsDoublePrecisionProcessing() const override { return true; }
 
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -69,6 +71,10 @@ public:
     void setEditorSize (int width, int height) noexcept { editorWidth = width; editorHeight = height; }
 
 private:
+    /// Audio is passed through untouched, whichever precision the host uses.
+    template <typename FloatType>
+    void passThrough (juce::AudioBuffer<FloatType>& buffer);
+
     int rootIndex { -1 };
     int scaleIndex { -1 };
     int highlightIndex { 0 };

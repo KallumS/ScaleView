@@ -56,7 +56,8 @@ bool ScaleViewProcessor::isBusesLayoutSupported (const BusesLayout& layouts) con
         && ! layouts.getMainOutputChannelSet().isDisabled();
 }
 
-void ScaleViewProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+template <typename FloatType>
+void ScaleViewProcessor::passThrough (juce::AudioBuffer<FloatType>& buffer)
 {
     juce::ScopedNoDenormals noDenormals;
 
@@ -65,6 +66,16 @@ void ScaleViewProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::M
     // in the buffer.
     for (auto channel = getTotalNumInputChannels(); channel < getTotalNumOutputChannels(); ++channel)
         buffer.clear (channel, 0, buffer.getNumSamples());
+}
+
+void ScaleViewProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+{
+    passThrough (buffer);
+}
+
+void ScaleViewProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::MidiBuffer&)
+{
+    passThrough (buffer);
 }
 
 //==============================================================================

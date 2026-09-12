@@ -10,6 +10,8 @@ each degree of a seven-note scale takes the next letter of the alphabet and
 whatever accidental that letter then needs. C# major reads C# D# E# F# G# A# B#,
 while Db major - the same seven notes - reads Db Eb F Gb Ab Bb C.
 
+![ScaleView](docs/screenshot.png)
+
 The plugin does not touch your audio. It passes it through untouched and exists
 to be looked at, so it can sit on any track.
 
