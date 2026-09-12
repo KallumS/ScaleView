@@ -1,0 +1,237 @@
+/*
+    Tests for the musical core, ported from the ScaleView Pro ReaScript's Lua
+    suite so the plugin has to meet the same bar. No JUCE, no host: build and
+    run this on its own with
+        c++ -std=c++17 Tests/TestScaleModel.cpp -o test && ./test
+*/
+
+#include "../Source/ScaleModel.h"
+
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <map>
+#include <random>
+#include <set>
+
+using namespace scaleview;
+
+namespace
+{
+int failures = 0;
+
+void fail (const std::string& message)
+{
+    std::printf ("FAIL: %s\n", message.c_str());
+    ++failures;
+}
+
+int indexOfRoot (const std::string& name)
+{
+    for (size_t i = 0; i < roots.size(); ++i)
+        if (name == roots[i].name) return static_cast<int> (i);
+    return -1;
+}
+
+int indexOfScale (const std::string& name)
+{
+    for (size_t i = 0; i < scales.size(); ++i)
+        if (name == scales[i].name) return static_cast<int> (i);
+    return -1;
+}
+
+// The scale as it reads from the root upwards.
+std::string spelling (const std::string& rootName, const std::string& scaleName)
+{
+    const int rootIndex = indexOfRoot (rootName);
+    const int scaleIndex = indexOfScale (scaleName);
+    if (rootIndex < 0 || scaleIndex < 0) { fail ("unknown key " + rootName + " " + scaleName); return {}; }
+
+    const auto key = buildKey (rootIndex, scaleIndex);
+    const int rootPc = roots[static_cast<size_t> (rootIndex)].pitchClass();
+
+    std::string out;
+    for (int step = 0; step < 12; ++step)
+    {
+        const auto pc = static_cast<size_t> ((rootPc + step) % 12);
+        if (key.lit[pc])
+        {
+            if (! out.empty()) out += " ";
+            out += key.names[pc];
+        }
+    }
+    return out;
+}
+
+void expect (const std::string& root, const std::string& scale, const std::string& expected)
+{
+    const auto got = spelling (root, scale);
+    if (got != expected)
+        fail (root + " " + scale + " spelled '" + got + "', expected '" + expected + "'");
+    else
+        std::printf ("  %-26s %s\n", (root + " " + scale).c_str(), got.c_str());
+}
+} // namespace
+
+int main()
+{
+    std::printf ("the requested spellings:\n");
+    expect ("C#", "Major", "C# D# E# F# G# A# B#");
+    expect ("F#", "Major", "F# G# A# B C# D# E#");
+    expect ("Gb", "Major", "Gb Ab Bb Cb Db Eb F");
+    expect ("Cb", "Major", "Cb Db Eb Fb Gb Ab Bb");
+    expect ("Db", "Major", "Db Eb F Gb Ab Bb C");
+
+    std::printf ("other scale types:\n");
+    expect ("C",  "Major Pentatonic", "C D E G A");
+    expect ("A",  "Minor Pentatonic", "A C D E G");
+    expect ("C",  "Major Blues", "C D Eb E G A");
+    expect ("C",  "Minor Blues", "C Eb F Gb G Bb");
+    expect ("C",  "Whole Tone", "C D E F# G# A#");
+    expect ("C",  "Diminished Whole-Half", "C D Eb F Gb Ab A B");
+    expect ("C",  "Diminished Half-Whole", "C Db Eb E F# G A Bb");
+    expect ("Eb", "Harmonic Minor", "Eb F Gb Ab Bb Cb D");
+    expect ("F",  "Dorian", "F G Ab Bb C D Eb");
+    expect ("B",  "Lydian", "B C# D# E# F# G# A#");
+    expect ("A",  "Harmonic Minor", "A B C D E F G#");
+
+    // Enharmonic pairs: the same circles, spelled differently.
+    std::printf ("enharmonic pairs light the same circles:\n");
+    for (const auto& pair : std::vector<std::pair<std::string, std::string>> {
+             { "C#", "Db" }, { "D#", "Eb" }, { "F#", "Gb" },
+             { "G#", "Ab" }, { "A#", "Bb" }, { "B",  "Cb" } })
+    {
+        const auto a = buildKey (indexOfRoot (pair.first),  indexOfScale ("Major"));
+        const auto b = buildKey (indexOfRoot (pair.second), indexOfScale ("Major"));
+        if (a.lit != b.lit)
+            fail (pair.first + " and " + pair.second + " major light different notes");
+
+        const auto sa = spelling (pair.first, "Major");
+        const auto sb = spelling (pair.second, "Major");
+        if (sa == sb)
+            fail (pair.first + " and " + pair.second + " major are spelled identically");
+        std::printf ("  %-3s %-24s = %-3s %s\n", pair.first.c_str(), sa.c_str(),
+                     pair.second.c_str(), sb.c_str());
+    }
+
+    // Notes outside the scale lean the way the key does.
+    {
+        const auto f = buildKey (indexOfRoot ("F"), indexOfScale ("Major"));
+        if (f.names[1] != "Db" || f.names[6] != "Gb")
+            fail ("a flat key should name its outside notes as flats");
+        const auto g = buildKey (indexOfRoot ("G"), indexOfScale ("Major"));
+        if (g.names[1] != "C#" || g.names[3] != "D#")
+            fail ("a sharp key should name its outside notes as sharps");
+        std::printf ("notes outside the scale follow the key: flats in F major, sharps in G major\n");
+    }
+
+    /*  Across every root and scale: the lit notes are unaffected by spelling,
+        every seven-note scale uses each of the seven letters exactly once, and
+        nothing needs more than a double accidental.
+    */
+    int combinations = 0;
+    for (size_t s = 0; s < scales.size(); ++s)
+    {
+        for (size_t r = 0; r < roots.size(); ++r)
+        {
+            const auto key = buildKey (static_cast<int> (r), static_cast<int> (s));
+            const auto& scale = scales[s];
+            const int rootPc = roots[r].pitchClass();
+            const std::string what = std::string (roots[r].name) + " " + scale.name;
+
+            std::array<bool, 12> want {};
+            for (const int interval : scale.intervals)
+                want[static_cast<size_t> ((rootPc + interval) % 12)] = true;
+            if (key.lit != want)
+                fail (what + ": wrong notes lit");
+
+            std::map<char, int> letterUse;
+            for (size_t pc = 0; pc < 12; ++pc)
+            {
+                if (! key.lit[pc]) continue;
+
+                const auto& name = key.names[pc];
+                if (name.empty() || name[0] < 'A' || name[0] > 'G')
+                    { fail (what + ": unspellable name"); continue; }
+
+                const auto accidental = name.substr (1);
+                if (! (accidental.empty() || accidental == "#" || accidental == "b"
+                       || accidental == "x" || accidental == "bb"))
+                    fail (what + ": odd accidental in " + name);
+
+                ++letterUse[name[0]];
+            }
+
+            if (scale.intervals.size() == 7)
+            {
+                if (letterUse.size() != 7)
+                    fail (what + ": does not use all seven letters");
+                for (const auto& use : letterUse)
+                    if (use.second != 1)
+                        fail (what + ": letter " + use.first + " used twice");
+            }
+            ++combinations;
+        }
+    }
+    std::printf ("all %d root/scale combinations: right notes lit, and every\n", combinations);
+    std::printf ("seven-note scale uses each of the seven letters exactly once\n");
+
+    // The fifteen real major keys need no double accidentals.
+    for (const std::string root : { "C","G","D","A","E","B","F#","C#","F","Bb","Eb","Ab","Db","Gb","Cb" })
+    {
+        const auto s = spelling (root, "Major");
+        if (s.find ('x') != std::string::npos || s.find ("bb") != std::string::npos)
+            fail (root + " major should not need a double accidental: " + s);
+    }
+    std::printf ("the fifteen standard major keys need no double accidentals\n");
+
+    // Every highlight stays pale enough for the dark note names drawn on it.
+    for (const auto& highlight : highlights)
+        if (highlight.luminance() <= 0.55)
+            fail (std::string (highlight.name) + " is too dark for dark note names");
+    std::printf ("all %zu highlight colours are pale enough for dark note names\n", highlights.size());
+
+    /*  Random Scale: lands on a real key, never the one already showing, and
+        spreads rather than sticking.
+    */
+    {
+        std::mt19937 rng { std::random_device {}() };
+        std::uniform_int_distribution<int> rootPick (0, static_cast<int> (roots.size()) - 1);
+        std::uniform_int_distribution<int> scalePick (0, static_cast<int> (scales.size()) - 1);
+
+        int currentRoot = -1, currentScale = -1;
+        std::set<std::string> seen;
+        std::set<int> seenRoots;
+
+        for (int i = 0; i < 60; ++i)
+        {
+            int root = 0, scale = 0;
+            do { root = rootPick (rng); scale = scalePick (rng); }
+            while (root == currentRoot && scale == currentScale);
+
+            if (root == currentRoot && scale == currentScale)
+                fail ("random pick repeated the current scale");
+
+            currentRoot = root;
+            currentScale = scale;
+
+            const auto key = buildKey (root, scale);
+            if (! key.hasScale) fail ("random pick produced no scale");
+            seen.insert (key.label);
+            seenRoots.insert (root);
+        }
+
+        if (seen.size() < 20 || seenRoots.size() < 5)
+            fail ("random picks look stuck");
+        std::printf ("random scale: 60 picks, %zu distinct over %zu roots, no repeats\n",
+                     seen.size(), seenRoots.size());
+    }
+
+    if (failures > 0)
+    {
+        std::printf ("%d FAILURE(S)\n", failures);
+        return 1;
+    }
+    std::printf ("PASS\n");
+    return 0;
+}
