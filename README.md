@@ -15,8 +15,10 @@ while Db major - the same seven notes - reads Db Eb F Gb Ab Bb C.
 The plugin does not touch your audio. It passes it through untouched and exists
 to be looked at, so it can sit on any track.
 
-This is a port of [ScaleView Pro for REAPER](https://github.com/KallumS/ScaleView-for-Reaper),
+This is a port of [ScaleView for REAPER](https://github.com/KallumS/ScaleView-for-Reaper),
 a ReaScript. The musical core is the same, verified against it note for note.
+(It was ported from that project's ScaleView Pro script, whose scale side now
+lives in ScaleView Detector.)
 
 ## Using it
 

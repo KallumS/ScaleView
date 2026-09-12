@@ -1,5 +1,5 @@
 /*
-    Tests for the musical core, ported from the ScaleView Pro ReaScript's Lua
+    Tests for the musical core, ported from the ScaleView ReaScript's Lua
     suite so the plugin has to meet the same bar. No JUCE, no host: build and
     run this on its own with
         c++ -std=c++17 Tests/TestScaleModel.cpp -o test && ./test

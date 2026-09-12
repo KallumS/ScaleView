@@ -8,7 +8,7 @@
     C# major reads C# D# E# F# G# A# B#, while Db major - the same seven
     notes - reads Db Eb F Gb Ab Bb C.
 
-    Ported from the ScaleView Pro ReaScript.
+    Ported from the ScaleView ReaScripts for REAPER.
 */
 
 #pragma once
