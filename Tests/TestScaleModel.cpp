@@ -191,6 +191,66 @@ int main()
             fail (std::string (highlight.name) + " is too dark for dark note names");
     std::printf ("all %zu highlight colours are pale enough for dark note names\n", highlights.size());
 
+    // Chords, named from the held notes and the bass.
+    {
+        auto keyFor = [] (const std::string& root, const std::string& scale)
+        {
+            return buildKey (indexOfRoot (root), indexOfScale (scale));
+        };
+        auto named = [] (const Key& key, std::vector<int> notes)
+        {
+            return chordName (notes, key);
+        };
+        auto check = [&] (const Key& key, std::vector<int> notes,
+                          const std::string& expected, const char* why = "")
+        {
+            const auto got = named (key, notes);
+            if (got != expected)
+                fail ("chord " + expected + " came out as '" + got + "'");
+            else
+                std::printf ("  %-14s %-10s %s\n", expected.c_str(),
+                             key.label.c_str(), why);
+        };
+
+        const auto none = Key {};
+        const int C4 = 60;
+
+        std::printf ("chords:\n");
+        check (none, { C4, C4 + 4, C4 + 7 }, "C");
+        check (none, { C4, C4 + 3, C4 + 7 }, "Cmin");
+        check (none, { C4, C4 + 3, C4 + 7, C4 + 10 }, "Cmin7");
+        check (none, { C4, C4 + 4, C4 + 7, C4 + 11 }, "Cmaj7");
+        check (none, { 59, 61, 66 }, "Bsus2", "B C# F#");
+        check (none, { 52, C4, 67 }, "C/E", "E in the bass");
+        check (none, { 45, C4, 64, 67 }, "Amin7", "A in the bass");
+        check (none, { 48, 64, 67, 69 }, "C6", "C in the bass");
+        check (none, { 43, C4, 64, 69 }, "Amin7/G", "neither in the bass");
+        check (none, { C4, C4 + 7 }, "C5");
+        check (none, { C4 }, "C");
+        check (none, { C4, C4 + 4 }, "C E", "not a chord we know");
+
+        // Roots follow the key, as the scale names do.
+        std::printf ("chords spelled for the key:\n");
+        check (keyFor ("Gb", "Major"), { 54, 58, 61 }, "Gb", "not F#");
+        check (keyFor ("F#", "Major"), { 54, 58, 61 }, "F#", "the same notes");
+        check (keyFor ("Cb", "Major"), { 59, 63, 66 }, "Cb");
+
+        /*  But chord symbols stop at one accidental. Both of these were
+            reported from the ReaScript: the key spells the notes with double
+            accidentals, which is right on the circles and absurd in a chord.
+        */
+        std::printf ("chords in keys that need double accidentals:\n");
+        check (keyFor ("Gb", "Minor Blues"), { C4, C4 + 4, C4 + 9 }, "Amin/C",
+               "key spells these Dbb Fb Bbb");
+        check (keyFor ("A#", "Harmonic Minor"), { C4, C4 + 3, C4 + 9 }, "Adim/B#",
+               "key spells the root Gx");
+
+        // The circles keep the key's spelling: only the symbol simplifies.
+        const auto sharpKey = keyFor ("A#", "Harmonic Minor");
+        if (sharpKey.names[9] != "Gx")
+            fail ("the circles should still spell pitch class 9 as Gx");
+    }
+
     /*  Random Scale: lands on a real key, never the one already showing, and
         spreads rather than sticking.
     */

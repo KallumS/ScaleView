@@ -46,7 +46,11 @@ ScaleViewProcessor::ScaleViewProcessor()
 {
 }
 
-void ScaleViewProcessor::prepareToPlay (double, int) {}
+void ScaleViewProcessor::prepareToPlay (double, int)
+{
+    // Whatever was held before the transport moved is no longer sounding.
+    clearHeldNotes();
+}
 
 bool ScaleViewProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
@@ -68,14 +72,64 @@ void ScaleViewProcessor::passThrough (juce::AudioBuffer<FloatType>& buffer)
         buffer.clear (channel, 0, buffer.getNumSamples());
 }
 
-void ScaleViewProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void ScaleViewProcessor::processBlock (juce::AudioBuffer<float>& buffer,
+                                       juce::MidiBuffer& midiMessages)
 {
+    trackHeldNotes (midiMessages);
     passThrough (buffer);
 }
 
-void ScaleViewProcessor::processBlock (juce::AudioBuffer<double>& buffer, juce::MidiBuffer&)
+void ScaleViewProcessor::processBlock (juce::AudioBuffer<double>& buffer,
+                                       juce::MidiBuffer& midiMessages)
 {
+    trackHeldNotes (midiMessages);
     passThrough (buffer);
+}
+
+//==============================================================================
+void ScaleViewProcessor::setNoteHeld (int note, bool isHeld) noexcept
+{
+    if (note < 0 || note > 127) return;
+
+    auto& half = note < 64 ? heldLow : heldHigh;
+    const auto bit = juce::uint64 (1) << (note % 64);
+
+    if (isHeld) half.fetch_or (bit, std::memory_order_relaxed);
+    else        half.fetch_and (~bit, std::memory_order_relaxed);
+}
+
+void ScaleViewProcessor::clearHeldNotes() noexcept
+{
+    heldLow.store (0, std::memory_order_relaxed);
+    heldHigh.store (0, std::memory_order_relaxed);
+}
+
+void ScaleViewProcessor::trackHeldNotes (const juce::MidiBuffer& midiMessages) noexcept
+{
+    // The MIDI is left in the buffer: this plugin reads it and passes it on,
+    // it does not consume it.
+    for (const auto metadata : midiMessages)
+    {
+        const auto message = metadata.getMessage();
+
+        if (message.isNoteOn())            setNoteHeld (message.getNoteNumber(), true);
+        else if (message.isNoteOff())      setNoteHeld (message.getNoteNumber(), false);
+        else if (message.isAllNotesOff()
+                 || message.isAllSoundOff()) clearHeldNotes();
+    }
+}
+
+std::vector<int> ScaleViewProcessor::getHeldNotes() const
+{
+    const auto [low, high] = getHeldMask();
+
+    std::vector<int> notes;
+    for (int note = 0; note < 64; ++note)
+        if (low & (juce::uint64 (1) << note)) notes.push_back (note);
+    for (int note = 0; note < 64; ++note)
+        if (high & (juce::uint64 (1) << note)) notes.push_back (note + 64);
+
+    return notes;
 }
 
 //==============================================================================

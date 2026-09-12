@@ -11,6 +11,8 @@ const juce::Colour colourUnlit      { 77, 79, 89 };
 const juce::Colour colourLabel      { 184, 189, 204 };
 const juce::Colour colourNameUnlit  { 158, 163, 179 };
 const juce::Colour colourNameLit    { 15, 31, 28 };
+const juce::Colour colourHeld       { 255, 255, 255 };   // ring around a note being played
+const juce::Colour colourChord      { 242, 245, 250 };   // brighter than a scale name
 
 juce::Colour highlightColour (int index)
 {
@@ -49,11 +51,37 @@ ScaleViewEditor::ScaleViewEditor (ScaleViewProcessor& p)
 
     const auto size = processor.getEditorSize();
     setSize (size.x, size.y);
+
+    refreshChord();
+    startTimerHz (30);
 }
 
 ScaleViewEditor::~ScaleViewEditor()
 {
+    stopTimer();
     processor.removeChangeListener (this);
+}
+
+//==============================================================================
+void ScaleViewEditor::refreshChord()
+{
+    const auto notes = processor.getHeldNotes();
+
+    heldClasses = {};
+    for (const int note : notes)
+        heldClasses[static_cast<size_t> (note % 12)] = true;
+
+    chordLabel = juce::String (scaleview::chordName (notes, processor.getKey()));
+}
+
+void ScaleViewEditor::timerCallback()
+{
+    const auto mask = processor.getHeldMask();
+    if (mask == lastHeldMask) return;
+
+    lastHeldMask = mask;
+    refreshChord();
+    repaint();
 }
 
 //==============================================================================
@@ -90,6 +118,13 @@ void ScaleViewEditor::drawCircle (juce::Graphics& g, float centreX, float centre
     g.setColour (lit ? highlight : colourUnlit);
     g.fillEllipse (centreX - radius, centreY - radius, radius * 2.0f, radius * 2.0f);
 
+    if (heldClasses[static_cast<size_t> (pitchClass)])
+    {
+        g.setColour (colourHeld);
+        g.drawEllipse (centreX - radius - 2.0f, centreY - radius - 2.0f,
+                       (radius + 2.0f) * 2.0f, (radius + 2.0f) * 2.0f, 1.5f);
+    }
+
     if (! processor.getShowNoteNames() || radius < 7.0f)
         return;
 
@@ -125,9 +160,11 @@ void ScaleViewEditor::paint (juce::Graphics& g)
 
     if (layout.labelHeight > 6.0f)
     {
+        const auto showingChord = chordLabel.isNotEmpty();
+
         g.setFont (juce::Font (juce::FontOptions (juce::jmax (9.0f, layout.labelHeight * 0.62f))));
-        g.setColour (colourLabel);
-        g.drawText (key.label,
+        g.setColour (showingChord ? colourChord : colourLabel);
+        g.drawText (showingChord ? chordLabel : juce::String (key.label),
                     juce::Rectangle<float> (layout.originX, layout.labelY,
                                             layout.boxWidth, layout.labelHeight),
                     juce::Justification::centred, false);

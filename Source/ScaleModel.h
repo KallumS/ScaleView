@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <string>
 #include <vector>
@@ -148,6 +149,7 @@ struct Key
     std::array<std::string, 12> names {};
     std::string label { "No scale selected" };
     bool hasScale { false };
+    bool usesFlats { false };   // which way the key leans, for chord symbols
 
     Key()
     {
@@ -192,7 +194,8 @@ inline Key buildKey (int rootIndex, int scaleIndex)
 
     // The notes outside the scale have no spelling of their own, so name them
     // in whichever direction the key leans.
-    const auto& outside = flats > sharps ? flatNames : sharpNames;
+    key.usesFlats = flats > sharps;
+    const auto& outside = key.usesFlats ? flatNames : sharpNames;
 
     for (size_t pc = 0; pc < 12; ++pc)
         if (! spelled[pc])
@@ -201,6 +204,149 @@ inline Key buildKey (int rootIndex, int scaleIndex)
     key.label = std::string (root.name) + " " + scale.name;
     key.hasScale = true;
     return key;
+}
+
+/*  Chord shapes, as semitones above the root. Order is priority: when two
+    readings fit the same notes and the bass does not decide between them, the
+    one nearer the top wins, so C E G A over a G reads Amin7/G rather than C6/G.
+
+    Kept in the same order as the ReaScript's table so both name chords
+    identically.
+*/
+struct Chord
+{
+    const char* name;
+    std::vector<int> intervals;
+};
+
+inline const std::vector<Chord> chords {
+    { "",         { 0, 4, 7 } },
+    { "min",      { 0, 3, 7 } },
+    { "7",        { 0, 4, 7, 10 } },
+    { "min7",     { 0, 3, 7, 10 } },
+    { "maj7",     { 0, 4, 7, 11 } },
+    { "6",        { 0, 4, 7, 9 } },
+    { "min6",     { 0, 3, 7, 9 } },
+    { "dim",      { 0, 3, 6 } },
+    { "aug",      { 0, 4, 8 } },
+    { "sus4",     { 0, 5, 7 } },
+    { "sus2",     { 0, 2, 7 } },
+    { "min7b5",   { 0, 3, 6, 10 } },
+    { "dim7",     { 0, 3, 6, 9 } },
+    { "minMaj7",  { 0, 3, 7, 11 } },
+    { "aug7",     { 0, 4, 8, 10 } },
+    { "maj7#5",   { 0, 4, 8, 11 } },
+    { "7sus4",    { 0, 5, 7, 10 } },
+    { "7sus2",    { 0, 2, 7, 10 } },
+    { "add9",     { 0, 2, 4, 7 } },
+    { "minAdd9",  { 0, 2, 3, 7 } },
+    { "9",        { 0, 2, 4, 7, 10 } },
+    { "min9",     { 0, 2, 3, 7, 10 } },
+    { "maj9",     { 0, 2, 4, 7, 11 } },
+    { "6/9",      { 0, 2, 4, 7, 9 } },
+    { "7b9",      { 0, 1, 4, 7, 10 } },
+    { "7#9",      { 0, 3, 4, 7, 10 } },
+    { "7#11",     { 0, 4, 6, 7, 10 } },
+    { "7b5",      { 0, 4, 6, 10 } },
+    { "11",       { 0, 2, 5, 7, 10 } },
+    { "min11",    { 0, 2, 3, 5, 7, 10 } },
+    { "13",       { 0, 2, 4, 7, 9, 10 } },
+    { "min13",    { 0, 2, 3, 7, 9, 10 } },
+    { "maj13",    { 0, 2, 4, 7, 9, 11 } },
+    { "5",        { 0, 7 } },
+
+    // Shells with the fifth left out, which is how these are usually voiced.
+    { "7",        { 0, 4, 10 } },
+    { "min7",     { 0, 3, 10 } },
+    { "maj7",     { 0, 4, 11 } },
+    { "minMaj7",  { 0, 3, 11 } },
+    { "9",        { 0, 2, 4, 10 } },
+    { "min9",     { 0, 2, 3, 10 } },
+};
+
+/*  Chord symbols are not written with double accidentals: the notes of Gb minor
+    blues are spelled Bbb and Dbb on the circles, which is right for a scale,
+    but the chord they make is Amin/C rather than Bbbmin/Dbb. So a chord root or
+    bass that the key spells with a double accidental falls back to its plain
+    name, leaning the same way as the key. Single accidentals are kept, which is
+    what makes a chord in Gb major read Gb rather than F#.
+*/
+inline std::string chordNoteName (int pitchClass, const Key& key)
+{
+    const auto& name = key.names[static_cast<size_t> (pitchClass)];
+
+    if (name.find ('x', 1) != std::string::npos || name.find ("bb", 1) != std::string::npos)
+        return (key.usesFlats ? flatNames : sharpNames)[static_cast<size_t> (pitchClass)];
+
+    return name;
+}
+
+/*  Names the chord made by the notes being held, or an empty string when
+    nothing is. heldNotes are MIDI note numbers; the lowest is the bass, which
+    decides between readings that fit equally well and names the slash.
+*/
+inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
+{
+    if (heldNotes.empty()) return {};
+
+    std::array<bool, 12> classes {};
+    int bass = *std::min_element (heldNotes.begin(), heldNotes.end());
+
+    for (const int note : heldNotes)
+        classes[static_cast<size_t> (((note % 12) + 12) % 12)] = true;
+
+    const int bassClass = ((bass % 12) + 12) % 12;
+
+    int count = 0;
+    for (const bool held : classes) if (held) ++count;
+    if (count == 1) return chordNoteName (bassClass, key);
+
+    struct Candidate { int root = -1; std::string name; size_t priority = 0; bool rooted = false; };
+    Candidate best;
+
+    for (int root = 0; root < 12; ++root)
+    {
+        if (! classes[static_cast<size_t> (root)]) continue;
+
+        std::vector<int> shape;
+        for (int pc = 0; pc < 12; ++pc)
+            if (classes[static_cast<size_t> (pc)])
+                shape.push_back (((pc - root) % 12 + 12) % 12);
+        std::sort (shape.begin(), shape.end());
+
+        for (size_t i = 0; i < chords.size(); ++i)
+        {
+            if (chords[i].intervals != shape) continue;
+
+            const bool rooted = root == bassClass;
+
+            // A reading whose root is in the bass wins outright; otherwise the
+            // more common chord, which is the one earlier in the table.
+            if (best.root < 0
+                || (rooted && ! best.rooted)
+                || (rooted == best.rooted && i < best.priority))
+                best = { root, chords[i].name, i, rooted };
+
+            break;
+        }
+    }
+
+    if (best.root < 0)
+    {
+        // Nothing we recognise: name the notes instead of guessing.
+        std::string spelled;
+        for (int pc = 0; pc < 12; ++pc)
+            if (classes[static_cast<size_t> (pc)])
+            {
+                if (! spelled.empty()) spelled += " ";
+                spelled += chordNoteName (pc, key);
+            }
+        return spelled;
+    }
+
+    auto name = chordNoteName (best.root, key) + best.name;
+    if (! best.rooted) name += "/" + chordNoteName (bassClass, key);
+    return name;
 }
 
 } // namespace scaleview

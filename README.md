@@ -12,8 +12,11 @@ while Db major - the same seven notes - reads Db Eb F Gb Ab Bb C.
 
 ![ScaleView](docs/screenshot.png)
 
-The plugin does not touch your audio. It passes it through untouched and exists
-to be looked at, so it can sit on any track.
+Notes you play are ringed, and the label names the chord you are holding -
+`Cmin7`, `Bsus2`, `C/E` - instead of the scale name.
+
+The plugin does not touch your audio: it passes both the audio and the MIDI
+through untouched and exists to be looked at, so it can sit on any track.
 
 This is a port of [ScaleView for REAPER](https://github.com/KallumS/ScaleView-for-Reaper),
 a ReaScript. The musical core is the same, verified against it note for note.
@@ -24,6 +27,27 @@ a ReaScript. The musical core is the same, verified against it note for note.
 | --- | --- |
 | Left-click | Scale list - pick a root under a scale type |
 | Right-click | Random Scale, note names on/off, highlight colour |
+| Play | The notes are ringed and the chord is named |
+
+### Chord detection
+
+Put it on a track that MIDI reaches and it names what you are holding. The
+**bass note decides**: B C# F# is `Bsus2` with B underneath but F#sus4 with F#
+underneath, and A C E G is `Amin7` or `C6` depending which is lowest. When the
+lowest note is not the root you get a slash chord (`C/E`); when neither the
+root nor a familiar shape is in the bass, the commoner chord wins and the bass
+follows the slash (`Amin7/G`). Anything it does not recognise is named as its
+notes (`C E`) rather than guessed at.
+
+Chord roots are spelled for the key, so a chord on Gb reads `Gbmaj7` in Gb
+major and `F#maj7` in F# major. Chord symbols stop at one accidental though:
+Gb minor blues spells two of its notes Bbb and Dbb, and the circles show them
+that way because it is correct for the scale, but the chord they make reads
+`Amin/C`.
+
+Unlike the ReaScript this was ported from, the plugin sees **all** the MIDI on
+its track, including MIDI items during playback - a script can only watch live
+input.
 
 The window is resizable and keeps its 2:1 proportions. Your selection, colour
 and window size are saved with the host project and in presets.
@@ -68,8 +92,12 @@ macOS will not load an unsigned plugin downloaded from the internet, but one
 you built yourself is fine. To validate the AU before opening a host:
 
 ```sh
-auval -v aufx Scvw Klms
+auval -v aumf Scvw Klms
 ```
+
+It validates as `aumf` - a MusicEffect - rather than `aufx`, because an Audio
+Unit effect only receives MIDI as a MusicEffect. That is also why it appears
+under Logic's MIDI-capable effects.
 
 Logic and GarageBand only rescan on launch, so quit and reopen them after
 installing.
@@ -124,17 +152,25 @@ cmake --build build-tests
 ctest --test-dir build-tests --output-on-failure
 ```
 
-`-DSCALEVIEW_BUILD_PLUGIN=OFF` skips JUCE entirely, so the tests build in a
-couple of seconds with nothing downloaded.
+`-DSCALEVIEW_BUILD_PLUGIN=OFF` skips JUCE entirely, so the model tests build in
+a couple of seconds with nothing downloaded.
+
+A second suite, `Tests/TestProcessorMidi.cpp`, needs JUCE because it drives the
+real processor: notes arriving on the audio thread, note-offs and all-notes-off,
+that the MIDI is passed on rather than consumed, notes at both ends of the two
+64-bit masks that track them, plugin state surviving a save and reload, and the
+editor's paint path drawing rings around the held notes. It is built with the
+plugin and run by the same `ctest`.
 
 ## Layout
 
 | | |
 | --- | --- |
 | `Source/ScaleModel.h` | The scales, the roots and the spelling engine. No JUCE, no host. |
-| `Source/PluginProcessor.*` | Audio passthrough, and the selection, saved with the project |
+| `Source/PluginProcessor.*` | Audio and MIDI passthrough, held-note tracking, and the selection, saved with the project |
 | `Source/PluginEditor.*` | The icon and its two menus |
-| `Tests/TestScaleModel.cpp` | The musical core's tests |
+| `Tests/TestScaleModel.cpp` | The musical core's tests - scales, spelling, chords |
+| `Tests/TestProcessorMidi.cpp` | The MIDI path, plugin state, and the editor's drawing |
 
 ## Differences from the ReaScript
 
@@ -142,5 +178,8 @@ couple of seconds with nothing downloaded.
   keeps its proportions.
 - **Random Scale** is seeded from the system random source rather than
   REAPER's clock.
+- **It sees more MIDI than the script does.** The ReaScript reads REAPER's
+  global input history, which carries live playing only; the plugin sees
+  whatever reaches its track, playback included.
 - **Settings** are saved with the host project and in presets, rather than in
   REAPER's global settings, so two instances can show different keys.

@@ -58,13 +58,17 @@ juce_add_plugin(ScaleView
     PRODUCT_NAME              "ScaleView"
     DESCRIPTION               "Key signature and scale reference"
     IS_SYNTH                  FALSE
-    NEEDS_MIDI_INPUT          FALSE
+    NEEDS_MIDI_INPUT          TRUE       # it reads MIDI to name the chord being played
     NEEDS_MIDI_OUTPUT         FALSE
     IS_MIDI_EFFECT            FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
     COPY_PLUGIN_AFTER_BUILD   FALSE      # set ON to install into your plugin folder on build
     VST3_CATEGORIES           "Analyzer" "Tools"
-    AU_MAIN_TYPE              "kAudioUnitType_Effect")
+    # AU_MAIN_TYPE is deliberately not set. JUCE only picks a type when the
+    # property is unset, and with NEEDS_MIDI_INPUT it picks MusicEffect, which
+    # is what makes Logic send MIDI to an effect. Forcing Effect here would
+    # silently stop the chord display working in Logic.
+    )
 
 target_sources(ScaleView PRIVATE
     Source/PluginProcessor.cpp
@@ -76,6 +80,38 @@ target_compile_definitions(ScaleView PUBLIC
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_DISPLAY_SPLASH_SCREEN=0
     JUCE_REPORT_APP_USAGE=0)
+
+#==============================================================================
+# A second test binary for the MIDI and state handling, which needs JUCE.
+#==============================================================================
+if(SCALEVIEW_BUILD_TESTS)
+    juce_add_console_app(ScaleViewProcessorTests PRODUCT_NAME "ScaleViewProcessorTests")
+
+    target_sources(ScaleViewProcessorTests PRIVATE
+        Tests/TestProcessorMidi.cpp
+        Source/PluginProcessor.cpp
+        Source/PluginEditor.cpp)
+
+    target_compile_definitions(ScaleViewProcessorTests PUBLIC
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_STANDALONE_APPLICATION=1
+        JucePlugin_Name="ScaleView"
+        JucePlugin_IsSynth=0
+        JucePlugin_WantsMidiInput=1
+        JucePlugin_ProducesMidiOutput=0
+        JucePlugin_IsMidiEffect=0)
+
+    target_link_libraries(ScaleViewProcessorTests
+        PRIVATE
+            ScaleViewModel
+            juce::juce_audio_utils
+        PUBLIC
+            juce::juce_recommended_config_flags
+            juce::juce_recommended_warning_flags)
+
+    add_test(NAME ProcessorMidi COMMAND ScaleViewProcessorTests)
+endif()
 
 target_link_libraries(ScaleView
     PRIVATE

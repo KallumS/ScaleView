@@ -33,7 +33,7 @@ public:
     bool hasEditor() const override { return true; }
 
     const juce::String getName() const override { return JucePlugin_Name; }
-    bool acceptsMidi() const override { return false; }
+    bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
     double getTailLengthSeconds() const override { return 0.0; }
@@ -60,6 +60,19 @@ public:
     /// The lit circles and their names for the current selection.
     scaleview::Key getKey() const;
 
+    /*  Which MIDI notes are being held. The audio thread writes these as two
+        64-bit masks and the editor reads them, so nothing is allocated or
+        locked on the audio thread.
+    */
+    std::pair<juce::uint64, juce::uint64> getHeldMask() const noexcept
+    {
+        return { heldLow.load (std::memory_order_relaxed),
+                 heldHigh.load (std::memory_order_relaxed) };
+    }
+
+    /// The held notes as numbers, lowest first. For the editor, not the audio thread.
+    std::vector<int> getHeldNotes() const;
+
     void setScale (int newRootIndex, int newScaleIndex);
     void clearScale()                     { setScale (-1, -1); }
     void setRandomScale();
@@ -74,6 +87,16 @@ private:
     /// Audio is passed through untouched, whichever precision the host uses.
     template <typename FloatType>
     void passThrough (juce::AudioBuffer<FloatType>& buffer);
+
+    /*  Tracks which notes are down. Called on the audio thread, so it only
+        touches the two atomics - no allocation, no locks.
+    */
+    void trackHeldNotes (const juce::MidiBuffer& midiMessages) noexcept;
+    void setNoteHeld (int note, bool isHeld) noexcept;
+    void clearHeldNotes() noexcept;
+
+    std::atomic<juce::uint64> heldLow { 0 };    // notes 0-63
+    std::atomic<juce::uint64> heldHigh { 0 };   // notes 64-127
 
     int rootIndex { -1 };
     int scaleIndex { -1 };
