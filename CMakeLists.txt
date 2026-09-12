@@ -13,6 +13,7 @@ endif()
 
 option(SCALEVIEW_BUILD_PLUGIN "Build the VST3/AU plugin (downloads JUCE)" ON)
 option(SCALEVIEW_BUILD_TESTS  "Build the scale model tests (no JUCE needed)" ON)
+option(SCALEVIEW_BUILD_CLAP   "Also build the CLAP (downloads clap-juce-extensions)" ON)
 
 #==============================================================================
 # The musical core: header only, no JUCE, no host.
@@ -84,3 +85,23 @@ target_link_libraries(ScaleView
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags)
+
+#==============================================================================
+# CLAP. JUCE does not build this format itself, so the plugin is wrapped by
+# clap-juce-extensions, which adds a CLAP target beside the VST3 and AU from
+# the same sources. Turn it off with -DSCALEVIEW_BUILD_CLAP=OFF.
+#==============================================================================
+if(SCALEVIEW_BUILD_CLAP)
+    # Pinned to a commit rather than the 0.26.0 release: that release predates
+    # JUCE 8.0.12 moving juce_LegacyAudioParameter into the new headless
+    # module, which the wrapper includes. This commit handles both layouts.
+    FetchContent_Declare(clap-juce-extensions
+        GIT_REPOSITORY https://github.com/free-audio/clap-juce-extensions.git
+        GIT_TAG        9fbefae3d9c3d130aafb558c1ec15427a4bd24be)
+
+    FetchContent_MakeAvailable(clap-juce-extensions)
+
+    clap_juce_extensions_plugin(TARGET ScaleView
+        CLAP_ID       "com.kallums.scaleview"
+        CLAP_FEATURES audio-effect analyzer utility)
+endif()

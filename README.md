@@ -1,7 +1,7 @@
 # ScaleView
 
-A small key signature / scale reference as a **VST3** and **Audio Unit**
-plugin. It shows the twelve pitch classes as circles - five on the top row for
+A small key signature / scale reference as a **VST3**, **Audio Unit** and
+**CLAP** plugin. It shows the twelve pitch classes as circles - five on the top row for
 the black keys of an octave, seven on the bottom for the white keys - and
 lights the notes of the scale you pick.
 
@@ -40,7 +40,7 @@ Blues, Whole Tone, Diminished Whole-Half and Diminished Half-Whole - each from
 You need [CMake](https://cmake.org) 3.22+ and a C++17 compiler. JUCE is
 downloaded automatically by the build, pinned in `CMakeLists.txt`.
 
-### macOS - VST3 and Audio Unit
+### macOS - VST3, Audio Unit and CLAP
 
 Xcode is required (free from the App Store); the command line tools alone are
 not enough for the AU.
@@ -52,12 +52,17 @@ cmake --build build --config Release
 
 This produces a universal binary for Intel and Apple silicon:
 
-- `build/ScaleView_artefacts/Release/VST3/ScaleView.vst3`
-- `build/ScaleView_artefacts/Release/AU/ScaleView.component`
+| Built | Install to |
+| --- | --- |
+| `build/ScaleView_artefacts/Release/VST3/ScaleView.vst3` | `~/Library/Audio/Plug-Ins/VST3/` |
+| `build/ScaleView_artefacts/Release/AU/ScaleView.component` | `~/Library/Audio/Plug-Ins/Components/` |
+| `build/ScaleView_artefacts/Release/CLAP/ScaleView.clap` | `~/Library/Audio/Plug-Ins/CLAP/` |
 
-Copy them to `~/Library/Audio/Plug-Ins/VST3/` and
-`~/Library/Audio/Plug-Ins/Components/`, or set `COPY_PLUGIN_AFTER_BUILD` to
-`ON` in `CMakeLists.txt` and the build will install them for you.
+Or set `COPY_PLUGIN_AFTER_BUILD` to `ON` in `CMakeLists.txt` and the build will
+install them for you.
+
+Logic and GarageBand only load Audio Units; REAPER and Bitwig will take the
+CLAP or the VST3.
 
 macOS will not load an unsigned plugin downloaded from the internet, but one
 you built yourself is fine. To validate the AU before opening a host:
@@ -69,7 +74,7 @@ auval -v aufx Scvw Klms
 Logic and GarageBand only rescan on launch, so quit and reopen them after
 installing.
 
-### Windows - VST3
+### Windows - VST3 and CLAP
 
 ```sh
 cmake -B build
@@ -77,9 +82,10 @@ cmake --build build --config Release
 ```
 
 Copy `build\ScaleView_artefacts\Release\VST3\ScaleView.vst3` to
-`C:\Program Files\Common Files\VST3\`.
+`C:\Program Files\Common Files\VST3\`, and
+`...\Release\CLAP\ScaleView.clap` to `C:\Program Files\Common Files\CLAP\`.
 
-### Linux - VST3
+### Linux - VST3 and CLAP
 
 Install the JUCE dependencies first:
 
@@ -91,7 +97,17 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
-Copy the `.vst3` to `~/.vst3/`.
+Copy the `.vst3` to `~/.vst3/` and the `.clap` to `~/.clap/`.
+
+### A note on CLAP
+
+JUCE does not build CLAP itself, so the plugin is wrapped by
+[clap-juce-extensions](https://github.com/free-audio/clap-juce-extensions),
+which adds a CLAP target beside the VST3 and AU from the same sources - there
+is no separate code for it. It is pinned to a commit rather than the 0.26.0
+release, because that release predates JUCE 8.0.12 moving a header into its new
+headless module; the pinned commit handles both layouts. Build without it using
+`-DSCALEVIEW_BUILD_CLAP=OFF`.
 
 ## Tests
 
