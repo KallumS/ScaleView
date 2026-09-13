@@ -101,12 +101,6 @@ while Db major, the same seven notes, reads Db Eb F Gb Ab Bb C. Scales that
 cannot take one letter per degree keep their conventional spelling, so major
 blues repeats a letter for its b3 and 3 and the diminished scales repeat one.
 
-There are **three suspensions here, not two**: `sus4`, `sus2` and `sus#4`. The
-raised fourth is a suspension only when the fifth is present - on its own the
-root and the #4 are a tritone and the note is a b5 - which is why `readCore`
-tests `has[6] && has[7]` together. Ported from the ReaScript; do not drop it
-from one side.
-
 Chords are **read, not looked up**. A table is matched exactly, so a voicing it
 does not hold reads out as a list of notes, and lengthening it never ends - a
 chord is a quality with any number of tones stacked on top. The old table here

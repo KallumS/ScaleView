@@ -39,10 +39,6 @@ whatever is left over is described on top of it as a sixth, ninth, eleventh or
 thirteenth, altered or not. So a voicing nobody thought to put in a table still
 gets a symbol - `Cmin7(11)`, `C13b9`, `G7(maj7)`, `Fadd9Add11`.
 
-It reads three suspensions rather than the usual two - `sus4`, `sus2` and
-`sus#4`, the last only when the fifth is under it, so C F# G is `Csus#4` while
-C E Gb is `C(b5)`.
-
 Every note that could be the root is costed and the cheapest reading wins,
 which is how the extensions come out as extensions rather than being discarded.
 The **bass is found separately** from the root, so inversions read as slash
