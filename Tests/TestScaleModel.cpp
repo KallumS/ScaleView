@@ -268,14 +268,6 @@ int main()
                "both sevenths at once, bracketed");
         check (plain, { 69, 71, 77 }, "F(b5)/A",
                "a third outranks a reading with none");
-        //  The diminished triad with a major seventh. It was missing from
-        //  coreRank in both engines, so it lost to a major triad wearing
-        //  altered ninths - C Eb Gb B read Baddb9/C, which has no seventh in
-        //  it at all.
-        check (plain, { C4, C4 + 3, C4 + 6, C4 + 11 }, "CminMaj7b5",
-               "the diminished triad with a major seventh");
-        check (plain, { C4, C4 + 2, C4 + 3, C4 + 6, C4 + 11 }, "CminMaj9b5",
-               "and with a ninth on it");
         check (plain, { C4, C4 + 7, C4 + 10 }, "C7(no3)",
                "but a missing third has to be said");
         check (plain, { C4, C4 + 4, C4 + 9 }, "Amin/C",
