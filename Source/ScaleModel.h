@@ -237,6 +237,11 @@ inline const std::map<std::string, int> coreRank {
     { "sus4/P/b7",   16 }, { "sus2/P/b7",   17 },
     { "sus4/P/maj7", 18 }, { "sus2/P/maj7", 19 },
 
+    // The raised fourth suspension. Rarer than the other two - it is the one
+    // suspension with a single home in a major key, the IVsus#4 - so it ranks
+    // below them.
+    { "sus#4/P/none", 20 }, { "sus#4/P/b7", 21 }, { "sus#4/P/maj7", 22 },
+
     // A missing third is a different chord, not a thinner one, so these sit
     // well below anything with a third in it.
     { "none/P/b7",   30 }, { "none/P/maj7", 31 },
@@ -246,7 +251,8 @@ inline const std::map<std::string, int> coreRank {
 //  A quality the table does not name is ranked by the interval that decides
 //  most about a chord: the third.
 inline const std::map<std::string, int> rankUnnamed {
-    { "maj", 25 }, { "min", 25 }, { "sus4", 70 }, { "sus2", 70 }, { "none", 90 },
+    { "maj", 25 }, { "min", 25 }, { "sus4", 70 }, { "sus2", 70 },
+    { "sus#4", 70 }, { "none", 90 },
 };
 
 //  The handful of qualities with names of their own; the rest are built.
@@ -283,6 +289,10 @@ inline Core readCore (const std::array<bool, 12>& has)
     else if (has[3]) { c.third = "min";  c.used[3] = true; }
     else if (has[5]) { c.third = "sus4"; c.used[5] = true; }
     else if (has[2]) { c.third = "sus2"; c.used[2] = true; }
+    //  A raised fourth is a suspension only when the fifth is there to hold
+    //  it up. On its own the two are a tritone, and the note is the flattened
+    //  fifth of something rather than a note suspended over one.
+    else if (has[6] && has[7]) { c.third = "sus#4"; c.used[6] = true; }
     else             { c.third = "none"; }
 
     if      (has[7]) { c.fifth = "P"; c.used[7] = true; }
@@ -308,14 +318,16 @@ inline std::string coreName (const std::string& third, const std::string& fifth,
 
     const std::string base = third == "min"  ? "min"
                            : third == "sus4" ? "sus4"
-                           : third == "sus2" ? "sus2" : "";
+                           : third == "sus2" ? "sus2"
+                           : third == "sus#4" ? "sus#4" : "";
     const std::string sev  = seventh == "b7"   ? "7"
                            : seventh == "bb7"  ? "dim7"
                            : seventh == "maj7" ? (third == "min" ? "Maj7" : "maj7") : "";
     const std::string alt  = fifth == "b" ? "b5" : fifth == "#" ? "#5" : "";
 
     // Sevenths are written before a sus, not after it: 7sus4, never sus47.
-    std::string name = (third == "sus4" || third == "sus2") ? sev + base : base + sev;
+    std::string name = (third == "sus4" || third == "sus2" || third == "sus#4")
+                     ? sev + base : base + sev;
     name += alt;
 
     // A bare altered fifth has to be bracketed or the symbol reads as a note
@@ -509,7 +521,8 @@ inline Reading analyse (const std::array<bool, 12>& has, int root, int bass)
 
     //  A suspension replaces the third rather than decorating it, so it does
     //  not carry added tones - "sus4 add6 add9" is not a chord anybody writes.
-    if ((c.third == "sus4" || c.third == "sus2") && ! asEleventh)
+    if ((c.third == "sus4" || c.third == "sus2" || c.third == "sus#4")
+        && ! asEleventh)
     {
         int carried = static_cast<int> (altered.size());
         for (const int degree : { 9, 11, 13 }) if (naturals[degree]) ++carried;

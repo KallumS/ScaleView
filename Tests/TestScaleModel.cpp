@@ -268,6 +268,16 @@ int main()
                "both sevenths at once, bracketed");
         check (plain, { 69, 71, 77 }, "F(b5)/A",
                "a third outranks a reading with none");
+        //  The raised fourth suspension - the IVsus#4, one per major key.
+        //  Without it a #4 could only read as the flattened fifth of
+        //  something else, and C F# G came out Gmaj7sus4/C.
+        check (plain, { C4, C4 + 6, C4 + 7 }, "Csus#4", "the raised fourth");
+        check (plain, { C4, C4 + 6, C4 + 7, C4 + 10 }, "C7sus#4",
+               "carrying a seventh");
+        check (plain, { C4, C4 + 4, C4 + 6 }, "C(b5)",
+               "no fifth under it, so the #4 is a flattened fifth instead");
+        check (plain, { C4, C4 + 5, C4 + 6, C4 + 7 }, "Csus4#11",
+               "a plain fourth is the suspension; the #4 rides on top");
         check (plain, { C4, C4 + 7, C4 + 10 }, "C7(no3)",
                "but a missing third has to be said");
         check (plain, { C4, C4 + 4, C4 + 9 }, "Amin/C",
