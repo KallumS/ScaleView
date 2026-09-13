@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -107,11 +108,14 @@ struct Highlight
     }
 };
 
+/*  Deliberately no white: the ring around a note being played is white, and a
+    white highlight swallows it. A saved "White" from an older build resolves to
+    no index and falls back to the default, which is tested.
+*/
 inline const std::vector<Highlight> highlights {
     { "Teal",        51, 204, 158 },
     { "Orange",     250, 140,  38 },
     { "Light Green", 140, 222, 102 },
-    { "White",      242, 245, 250 },
     { "Light Blue", 102, 184, 250 },
     { "Light Pink", 250, 158, 199 },
     { "Gold",       242, 199,  56 },
@@ -206,146 +210,440 @@ inline Key buildKey (int rootIndex, int scaleIndex)
     return key;
 }
 
-/*  Chord shapes, as semitones above the root. Order is priority: when two
-    readings fit the same notes and the bass does not decide between them, the
-    one nearer the top wins, so C E G A over a G reads Amin7/G rather than C6/G.
+/*  Chord naming, built rather than looked up.
 
-    Kept in the same order as the ReaScript's table so both name chords
-    identically.
+    A chord symbol has two halves. The bottom half - third, fifth and seventh -
+    is a closed vocabulary: those three can only combine so many ways, and each
+    combination has a name musicians agree on. That half is a table, ordered by
+    how common the quality is.
+
+    The top half - sixths, ninths, elevenths, thirteenths and their alterations
+    - is not closed, so it is described rather than matched. Whatever the bottom
+    half did not account for is read off as an extension, which is why a voicing
+    nobody thought to tabulate still comes out with a name.
+
+    This is a port of the ReaScript's engine and must stay in step with it, line
+    for line. Every weight below was arrived at by breaking a test; see that
+    repository's CLAUDE.md for what each one is holding up.
 */
-struct Chord
+inline const std::map<std::string, int> coreRank {
+    { "maj/P/none",   1 }, { "min/P/none",   2 },
+    { "maj/P/b7",     3 }, { "min/P/b7",     4 }, { "maj/P/maj7",  5 },
+    { "min/b/b7",     6 }, { "min/b/bb7",    7 }, { "min/b/none",  8 },
+    { "maj/#/none",   9 },
+    { "sus4/P/none", 10 }, { "sus2/P/none", 11 },
+    { "min/P/maj7",  12 },
+    { "maj/#/b7",    13 }, { "maj/b/b7",    14 }, { "maj/#/maj7", 15 },
+    { "sus4/P/b7",   16 }, { "sus2/P/b7",   17 },
+    { "sus4/P/maj7", 18 }, { "sus2/P/maj7", 19 },
+
+    // A missing third is a different chord, not a thinner one, so these sit
+    // well below anything with a third in it.
+    { "none/P/b7",   30 }, { "none/P/maj7", 31 },
+    { "none/b/maj7", 32 }, { "none/b/b7",   33 }, { "none/P/none", 34 },
+};
+
+//  A quality the table does not name is ranked by the interval that decides
+//  most about a chord: the third.
+inline const std::map<std::string, int> rankUnnamed {
+    { "maj", 25 }, { "min", 25 }, { "sus4", 70 }, { "sus2", 70 }, { "none", 90 },
+};
+
+//  The handful of qualities with names of their own; the rest are built.
+inline const std::map<std::string, std::string> specialNames {
+    { "min/b/none",    "dim"     }, { "min/b/bb7",  "dim7"    },
+    { "min/b/b7",      "min7b5"  }, { "maj/#/none", "aug"     },
+    { "maj/#/b7",      "aug7"    }, { "maj/#/maj7", "maj7#5"  },
+    { "maj/b/b7",      "7b5"     }, { "min/P/maj7", "minMaj7" },
+    { "min/none/maj7", "minMaj7" },
+};
+
+inline constexpr int rankTwiceOdd  = 12;  // odd fifth AND odd seventh
+inline constexpr int rankNoFifth   = 20;  // a triad that has lost its fifth
+inline constexpr int rankNoFifth7  =  4;  // a seventh chord voiced as a shell
+inline constexpr int rankEleventh  =  6;  // a sus4 carrying a seventh and a ninth
+inline constexpr int costInversion = 14;  // naming the bass after a slash
+inline constexpr int costNatural   =  1;  // an extension the number implies
+inline constexpr int costAdd       =  2;  // one that has to be spelled out
+inline constexpr int costClash     =  6;  // a natural 11th fighting a major 3rd
+inline constexpr int costAltered   =  5;  // b9, #9, #11, b13 colouring a chord
+inline constexpr int costClashing  = 18;  // one that does not belong there
+inline constexpr int costSusExtra  = 12;  // a suspension carrying added tones
+inline constexpr int costSixth     =  4;  // enough that C E A stays Amin/C
+
+struct Core { std::string third, fifth, seventh; std::array<bool, 12> used {}; };
+
+//  Reading the intervals present into a third, a fifth and a seventh.
+inline Core readCore (const std::array<bool, 12>& has)
 {
-    const char* name;
-    std::vector<int> intervals;
+    Core c;
+    c.used[0] = true;
+
+    if      (has[4]) { c.third = "maj";  c.used[4] = true; }
+    else if (has[3]) { c.third = "min";  c.used[3] = true; }
+    else if (has[5]) { c.third = "sus4"; c.used[5] = true; }
+    else if (has[2]) { c.third = "sus2"; c.used[2] = true; }
+    else             { c.third = "none"; }
+
+    if      (has[7]) { c.fifth = "P"; c.used[7] = true; }
+    else if (has[6]) { c.fifth = "b"; c.used[6] = true; }
+    else if (has[8]) { c.fifth = "#"; c.used[8] = true; }
+    else             { c.fifth = "none"; }
+
+    // A diminished triad takes the 9 as a doubly flattened seventh.
+    if      (has[10]) { c.seventh = "b7";   c.used[10] = true; }
+    else if (has[11]) { c.seventh = "maj7"; c.used[11] = true; }
+    else if (c.third == "min" && c.fifth == "b" && has[9])
+                      { c.seventh = "bb7";  c.used[9]  = true; }
+    else              { c.seventh = "none"; }
+
+    return c;
+}
+
+inline std::string coreName (const std::string& third, const std::string& fifth,
+                             const std::string& seventh)
+{
+    const auto special = specialNames.find (third + "/" + fifth + "/" + seventh);
+    if (special != specialNames.end()) return special->second;
+
+    const std::string base = third == "min"  ? "min"
+                           : third == "sus4" ? "sus4"
+                           : third == "sus2" ? "sus2" : "";
+    const std::string sev  = seventh == "b7"   ? "7"
+                           : seventh == "bb7"  ? "dim7"
+                           : seventh == "maj7" ? (third == "min" ? "Maj7" : "maj7") : "";
+    const std::string alt  = fifth == "b" ? "b5" : fifth == "#" ? "#5" : "";
+
+    // Sevenths are written before a sus, not after it: 7sus4, never sus47.
+    std::string name = (third == "sus4" || third == "sus2") ? sev + base : base + sev;
+    name += alt;
+
+    // A bare altered fifth has to be bracketed or the symbol reads as a note
+    // name: C(b5) is a chord on C, Cb5 looks like one on C flat.
+    if (name == alt && ! alt.empty()) name = "(" + alt + ")";
+    return name;
+}
+
+inline int rankOf (const std::string& third, const std::string& fifth,
+                   const std::string& seventh)
+{
+    if (fifth == "none")
+    {
+        const auto it = coreRank.find (third + "/P/" + seventh);
+        const int rank = it != coreRank.end() ? it->second : rankUnnamed.at (third);
+        return rank + (seventh == "none" ? rankNoFifth : rankNoFifth7);
+    }
+
+    const auto it = coreRank.find (third + "/" + fifth + "/" + seventh);
+    if (it != coreRank.end()) return it->second;
+
+    return rankUnnamed.at (third) + (seventh != "none" ? rankTwiceOdd : 0);
+}
+
+//  interval -> { how it is written, whether it is an alteration, which degree }
+struct Extension { const char* text; bool altered; int degree; };
+inline const std::map<int, Extension> extensions {
+    { 1, { "b9",  true,  0 } }, { 2, { "9",   false, 9  } },
+    { 3, { "#9",  true,  0 } }, { 5, { "11",  false, 11 } },
+    { 6, { "#11", true,  0 } }, { 8, { "b13", true,  0 } },
 };
 
-inline const std::vector<Chord> chords {
-    { "",         { 0, 4, 7 } },
-    { "min",      { 0, 3, 7 } },
-    { "7",        { 0, 4, 7, 10 } },
-    { "min7",     { 0, 3, 7, 10 } },
-    { "maj7",     { 0, 4, 7, 11 } },
-    { "6",        { 0, 4, 7, 9 } },
-    { "min6",     { 0, 3, 7, 9 } },
-    { "dim",      { 0, 3, 6 } },
-    { "aug",      { 0, 4, 8 } },
-    { "sus4",     { 0, 5, 7 } },
-    { "sus2",     { 0, 2, 7 } },
-    { "min7b5",   { 0, 3, 6, 10 } },
-    { "dim7",     { 0, 3, 6, 9 } },
-    { "minMaj7",  { 0, 3, 7, 11 } },
-    { "aug7",     { 0, 4, 8, 10 } },
-    { "maj7#5",   { 0, 4, 8, 11 } },
-    { "7sus4",    { 0, 5, 7, 10 } },
-    { "7sus2",    { 0, 2, 7, 10 } },
-    { "add9",     { 0, 2, 4, 7 } },
-    { "minAdd9",  { 0, 2, 3, 7 } },
-    { "9",        { 0, 2, 4, 7, 10 } },
-    { "min9",     { 0, 2, 3, 7, 10 } },
-    { "maj9",     { 0, 2, 4, 7, 11 } },
-    { "6/9",      { 0, 2, 4, 7, 9 } },
-    { "7b9",      { 0, 1, 4, 7, 10 } },
-    { "7#9",      { 0, 3, 4, 7, 10 } },
-    { "7#11",     { 0, 4, 6, 7, 10 } },
-    { "7b5",      { 0, 4, 6, 10 } },
-    { "11",       { 0, 2, 5, 7, 10 } },
-    { "min11",    { 0, 2, 3, 5, 7, 10 } },
-    { "13",       { 0, 2, 4, 7, 9, 10 } },
-    { "min13",    { 0, 2, 3, 7, 9, 10 } },
-    { "maj13",    { 0, 2, 4, 7, 9, 11 } },
-    { "5",        { 0, 7 } },
+struct Reading { std::string name; int cost = 0; int rank = 0; };
 
-    // Shells with the fifth left out, which is how these are usually voiced.
-    { "7",        { 0, 4, 10 } },
-    { "min7",     { 0, 3, 10 } },
-    { "maj7",     { 0, 4, 11 } },
-    { "minMaj7",  { 0, 3, 11 } },
-    { "9",        { 0, 2, 4, 10 } },
-    { "min9",     { 0, 2, 3, 10 } },
-};
-
-/*  Chord symbols are not written with double accidentals: the notes of Gb minor
-    blues are spelled Bbb and Dbb on the circles, which is right for a scale,
-    but the chord they make is Amin/C rather than Bbbmin/Dbb. So a chord root or
-    bass that the key spells with a double accidental falls back to its plain
-    name, leaning the same way as the key. Single accidentals are kept, which is
-    what makes a chord in Gb major read Gb rather than F#.
+/*  Names the shape `has` read from `root`, and prices that reading. The cost is
+    the whole of the musical judgement: how unusual the quality is, what its
+    extensions cost, and whether the root had to be named after a slash.
 */
+inline Reading analyse (const std::array<bool, 12>& has, int root, int bass)
+{
+    const Core c = readCore (has);
+    const int rank = rankOf (c.third, c.fifth, c.seventh);
+
+    Reading out;
+    out.name = coreName (c.third, c.fifth, c.seventh);
+    out.cost = rank;
+    out.rank = rank;
+
+    std::map<int, bool> naturals;
+    std::vector<std::string> altered;
+    bool sixth = false, asEleventh = false;
+
+    for (size_t i = 1; i <= 11; ++i)
+    {
+        if (! has[i] || c.used[i]) continue;
+
+        if (i == 9)
+        {
+            if (c.seventh == "none") sixth = true; else naturals[13] = true;
+            continue;
+        }
+
+        const auto ext = extensions.find (static_cast<int> (i));
+        if (ext == extensions.end())
+        {
+            // Only 11 arrives here: readCore always takes 4, 7 and 10 when
+            // present and 9 was dealt with above. This is the major seventh
+            // left over when a flattened one took the seventh's place.
+            altered.emplace_back ("maj7");
+        }
+        else if (ext->second.altered) altered.emplace_back (ext->second.text);
+        else naturals[ext->second.degree] = true;
+    }
+
+    if (c.seventh != "none" && c.seventh != "bb7")
+    {
+        /*  A stacked number claims every degree beneath it, so it may only be
+            used when the ninth is actually played - Hutchinson's chord list
+            prints Cm11 and Cm7(11) side by side, six noteheads against five.
+            An altered ninth still fills the place, since the same list prints
+            C13sus(b9) with six noteheads.
+        */
+        bool ninth = naturals[9];
+        for (const auto& token : altered)
+            if (token == "b9" || token == "#9") ninth = true;
+
+        int number = 0;
+        if      (ninth && naturals[13]) number = 13;
+        else if (ninth && naturals[11] && c.third != "maj") number = 11;
+        else if (naturals[9]) number = 9;
+
+        if (c.third == "sus4" && c.seventh == "b7" && naturals[9]
+            && (c.fifth == "P" || c.fifth == "none"))
+        {
+            // A sus4 carrying a seventh and a ninth is how an eleventh chord is
+            // voiced, so it is named as one rather than as a suspension.
+            out.name = "11";
+            number = 11;
+            asEleventh = true;
+            naturals[11] = true;
+            out.cost = rankEleventh + (c.fifth == "none" ? rankNoFifth7 : 0);
+        }
+        else if (number != 0)
+        {
+            const auto at = out.name.find ('7');
+            if (at != std::string::npos)
+                out.name = out.name.substr (0, at) + std::to_string (number)
+                         + out.name.substr (at + 1);
+        }
+
+        std::vector<int> spare;
+        for (const int degree : { 9, 11, 13 })
+        {
+            if (! naturals[degree]) continue;
+
+            const bool implied = number != 0 && degree <= number
+                                 && ! (degree == 11 && c.third == "maj");
+            if (implied) out.cost += costNatural;
+            else
+            {
+                out.cost += (degree == 11 && c.third == "maj") ? costClash : costAdd;
+                spare.push_back (degree);
+            }
+        }
+
+        // Everything the number did not account for, bracketed as the chord
+        // lists print it: Cm7(11), C7(13), C7(11,13).
+        if (! spare.empty())
+        {
+            std::string list;
+            for (size_t i = 0; i < spare.size(); ++i)
+                list += (i ? "," : "") + std::to_string (spare[i]);
+            out.name += "(" + list + ")";
+        }
+    }
+    else
+    {
+        if (sixth)
+        {
+            out.cost += costSixth;
+
+            // The sixth stands where a seventh would, so the symbol is rebuilt
+            // around it. An altered fifth has to survive that: C Eb G# A is
+            // min6#5, and naming it Cmin6 claims a fifth nobody played.
+            const std::string mark = c.fifth == "b" ? "b5" : c.fifth == "#" ? "#5" : "";
+
+            if (naturals[9] && (c.third == "maj" || c.third == "min"))
+            {
+                naturals[9] = false;
+                out.name = (c.third == "min" ? "min6/9" : "6/9") + mark;
+                out.cost += costAdd;
+            }
+            else if (c.third == "min")  out.name = "min6" + mark;
+            else if (c.third == "maj")  out.name = c.fifth == "#" ? "aug6" : "6" + mark;
+            else if (c.third == "none") out.name = "6" + mark;
+            else                        out.name += "(add6)";
+        }
+
+        for (const int degree : { 9, 11, 13 })
+        {
+            if (! naturals[degree]) continue;
+            out.cost += (degree == 11 && c.third == "maj") ? costClash : costAdd;
+            out.name += (out.name.empty() ? "add" : "Add") + std::to_string (degree);
+        }
+    }
+
+    /*  An alteration has to belong to the chord under it. A b9, a #9 and a b13
+        are the dominant's; a complete triad is also at home with one, which is
+        how Scaler 3 reads a chord - except a b13, whose note is nearly always a
+        chord tone of something plainer (E G B with a C in it is Cmaj7 inverted,
+        not Emin wearing a b13).
+    */
+    const bool dominant = c.third == "maj" && c.seventh == "b7";
+    const bool triad = (c.third == "maj" || c.third == "min") && c.fifth == "P";
+
+    for (const auto& token : altered)
+    {
+        const bool athome = c.fifth != "b" && c.fifth != "#" && token != "maj7"
+                            && (token == "#11" || dominant
+                                || (triad && token != "b13"));
+
+        //  A flattened sixth is a b13 only when a seventh is under it; without
+        //  one it is an added flat sixth. Both sevenths at once is a cluster,
+        //  so it is bracketed or the two names run together as "G7maj7".
+        const std::string shown = (token == "b13" && c.seventh == "none") ? "b6"
+                                : token == "maj7" ? "(maj7)" : token;
+
+        out.cost += athome ? costAltered : costClashing;
+        out.name += ((out.name.empty() && c.seventh == "none") ? "add" : "") + shown;
+    }
+
+    //  A suspension replaces the third rather than decorating it, so it does
+    //  not carry added tones - "sus4 add6 add9" is not a chord anybody writes.
+    if ((c.third == "sus4" || c.third == "sus2") && ! asEleventh)
+    {
+        int carried = static_cast<int> (altered.size());
+        for (const int degree : { 9, 11, 13 }) if (naturals[degree]) ++carried;
+        if (sixth) ++carried;
+        out.cost += carried * costSusExtra;
+    }
+
+    //  A missing third is the one omission that has to be said out loud, and it
+    //  is said last: maj7b5(no3), not maj7(no3)b5.
+    if (c.third == "none")
+        out.name = out.name.empty() ? "5" : out.name + "(no3)";
+
+    if (root != bass) out.cost += costInversion;
+    return out;
+}
+
+/*  A chord symbol is written with the spellings real keys are built on - the
+    eighteen in `roots`. Anything else falls back to a plain name leaning the
+    way the key does: the double accidentals a key like Gb minor blues produces
+    (Amin/C, never Bbbmin/Dbb) and the theoretical spellings nobody builds a
+    chord on, B#, E# and Fb.
+*/
+/*  "Simplify Note Names": names every note the way a piano key is named -
+    sharps for the black keys, and no double accidentals, so Bbb reads A and Cb
+    reads B. The scale stays exactly as chosen, label and lit notes included;
+    only the spelling changes, which is also what the chord symbols are built
+    from, so they simplify with it.
+*/
+inline Key simplified (Key key)
+{
+    for (size_t pc = 0; pc < 12; ++pc)
+        key.names[pc] = sharpNames[pc];
+
+    key.usesFlats = false;
+    return key;
+}
+
 inline std::string chordNoteName (int pitchClass, const Key& key)
 {
     const auto& name = key.names[static_cast<size_t> (pitchClass)];
 
-    if (name.find ('x', 1) != std::string::npos || name.find ("bb", 1) != std::string::npos)
-        return (key.usesFlats ? flatNames : sharpNames)[static_cast<size_t> (pitchClass)];
+    for (const Root& root : roots)
+        if (name == root.name) return name;
 
-    return name;
+    return (key.usesFlats ? flatNames : sharpNames)[static_cast<size_t> (pitchClass)];
 }
+
+/*  With no scale chosen the naming still needs a key to settle the readings
+    that are a genuine draw, so it assumes C major. The assumption is invisible:
+    no circle lights, and choosing C major explicitly gives identical names.
+*/
+inline constexpr std::array<bool, 12> assumedKey {
+    true, false, true, false, true, true, false, true, false, true, false, true
+};
 
 /*  Names the chord made by the notes being held, or an empty string when
     nothing is. heldNotes are MIDI note numbers; the lowest is the bass, which
-    decides between readings that fit equally well and names the slash.
+    is found separately from the root and named after a slash when they differ.
 */
 inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
 {
     if (heldNotes.empty()) return {};
 
     std::array<bool, 12> classes {};
-    int bass = *std::min_element (heldNotes.begin(), heldNotes.end());
-
     for (const int note : heldNotes)
         classes[static_cast<size_t> (((note % 12) + 12) % 12)] = true;
 
-    const int bassClass = ((bass % 12) + 12) % 12;
+    const int bass = ((*std::min_element (heldNotes.begin(), heldNotes.end()) % 12) + 12) % 12;
 
     int count = 0;
     for (const bool held : classes) if (held) ++count;
-    if (count == 1) return chordNoteName (bassClass, key);
+    if (count == 1) return chordNoteName (bass, key);
 
-    struct Candidate { int root = -1; std::string name; size_t priority = 0; bool rooted = false; };
-    Candidate best;
+    const auto spellOut = [&]
+    {
+        std::string spelled;
+        for (int pc = 0; pc < 12; ++pc)
+            if (classes[static_cast<size_t> (pc)])
+            {
+                if (! spelled.empty()) spelled += ' ';
+                spelled += chordNoteName (pc, key);
+            }
+        return spelled;
+    };
+
+    //  Two notes are an interval rather than a chord, and only the bare fifth
+    //  has a name of its own.
+    if (count == 2)
+    {
+        for (int root = 0; root < 12; ++root)
+            if (classes[static_cast<size_t> (root)]
+                && classes[static_cast<size_t> ((root + 7) % 12)])
+            {
+                std::string name = chordNoteName (root, key) + "5";
+                if (root != bass) name += "/" + chordNoteName (bass, key);
+                return name;
+            }
+
+        return spellOut();
+    }
+
+    //  Past a certain thickness there is no chord left to find, only a cluster.
+    if (count > 7) return spellOut();
+
+    struct Best { int root = -1; std::string name; int cost = 0, rank = 0, fit = 0; };
+    Best best;
 
     for (int root = 0; root < 12; ++root)
     {
         if (! classes[static_cast<size_t> (root)]) continue;
 
-        std::vector<int> shape;
+        std::array<bool, 12> has {};
         for (int pc = 0; pc < 12; ++pc)
             if (classes[static_cast<size_t> (pc)])
-                shape.push_back (((pc - root) % 12 + 12) % 12);
-        std::sort (shape.begin(), shape.end());
+                has[static_cast<size_t> (((pc - root) % 12 + 12) % 12)] = true;
 
-        for (size_t i = 0; i < chords.size(); ++i)
-        {
-            if (chords[i].intervals != shape) continue;
+        const Reading reading = analyse (has, root, bass);
 
-            const bool rooted = root == bassClass;
-
-            // A reading whose root is in the bass wins outright; otherwise the
-            // more common chord, which is the one earlier in the table.
-            if (best.root < 0
-                || (rooted && ! best.rooted)
-                || (rooted == best.rooted && i < best.priority))
-                best = { root, chords[i].name, i, rooted };
-
-            break;
-        }
-    }
-
-    if (best.root < 0)
-    {
-        // Nothing we recognise: name the notes instead of guessing.
-        std::string spelled;
+        //  The scale only breaks a draw: a root that is a degree of it wins,
+        //  then a reading whose notes sit in it, then the commoner quality.
+        const auto& lit = key.hasScale ? key.lit : assumedKey;
+        int fit = lit[static_cast<size_t> (root)] ? 100 : 0;
         for (int pc = 0; pc < 12; ++pc)
-            if (classes[static_cast<size_t> (pc)])
-            {
-                if (! spelled.empty()) spelled += " ";
-                spelled += chordNoteName (pc, key);
-            }
-        return spelled;
+            if (classes[static_cast<size_t> (pc)] && lit[static_cast<size_t> (pc)]) ++fit;
+
+        if (best.root < 0
+            || reading.cost < best.cost
+            || (reading.cost == best.cost && fit > best.fit)
+            || (reading.cost == best.cost && fit == best.fit && reading.rank < best.rank))
+            best = { root, reading.name, reading.cost, reading.rank, fit };
     }
 
-    auto name = chordNoteName (best.root, key) + best.name;
-    if (! best.rooted) name += "/" + chordNoteName (bassClass, key);
+    std::string name = chordNoteName (best.root, key) + best.name;
+    if (best.root != bass) name += "/" + chordNoteName (bass, key);
     return name;
 }
 

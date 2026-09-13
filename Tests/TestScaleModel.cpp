@@ -235,15 +235,74 @@ int main()
         check (keyFor ("F#", "Major"), { 54, 58, 61 }, "F#", "the same notes");
         check (keyFor ("Cb", "Major"), { 59, 63, 66 }, "Cb");
 
-        /*  But chord symbols stop at one accidental. Both of these were
-            reported from the ReaScript: the key spells the notes with double
-            accidentals, which is right on the circles and absurd in a chord.
+        /*  But a chord symbol is written with the spellings real keys are
+            built on - the eighteen in `roots`. Anything else falls back to a
+            plain name: the double accidentals a key like Gb minor blues
+            produces, and the theoretical spellings nobody builds a chord on,
+            B# among them. Both were reported from the ReaScript.
         */
         std::printf ("chords in keys that need double accidentals:\n");
         check (keyFor ("Gb", "Minor Blues"), { C4, C4 + 4, C4 + 9 }, "Amin/C",
                "key spells these Dbb Fb Bbb");
-        check (keyFor ("A#", "Harmonic Minor"), { C4, C4 + 3, C4 + 9 }, "Adim/B#",
-               "key spells the root Gx");
+        check (keyFor ("A#", "Harmonic Minor"), { C4, C4 + 3, C4 + 9 }, "Adim/C",
+               "key spells the root Gx and the bass B#");
+
+        /*  What the reader does that a table could not. Each of these came
+            out of the old table-based engine as a list of notes, and each
+            rule behind them is stated in the ReaScript's CLAUDE.md.
+        */
+        std::printf ("chords no table held:\n");
+        const Key plain {};
+        check (plain, { C4, C4 + 4, C4 + 7, C4 + 8, C4 + 10 }, "C7b13", "");
+        check (plain, { C4, C4 + 4, C4 + 6, C4 + 7, C4 + 11 }, "Cmaj7#11", "");
+        check (plain, { C4, C4 + 3, C4 + 5, C4 + 7, C4 + 10 }, "Cmin7(11)",
+               "no ninth, so the number cannot claim one");
+        check (plain, { C4, C4 + 2, C4 + 3, C4 + 5, C4 + 7, C4 + 10 }, "Cmin11",
+               "and with the ninth, it can");
+        check (plain, { C4, C4 + 4, C4 + 7, C4 + 9, C4 + 10 }, "C7(13)", "");
+        check (plain, { C4, C4 + 1, C4 + 4, C4 + 7, C4 + 9, C4 + 10 }, "C13b9",
+               "an altered ninth still fills the stack");
+        check (plain, { C4, C4 + 4, C4 + 7, C4 + 8 }, "Caddb6",
+               "a flat sixth is a b6 until a seventh arrives");
+        check (plain, { 55, 59, 62, 66, 77 }, "G7(maj7)",
+               "both sevenths at once, bracketed");
+        check (plain, { 69, 71, 77 }, "F(b5)/A",
+               "a third outranks a reading with none");
+        check (plain, { C4, C4 + 7, C4 + 10 }, "C7(no3)",
+               "but a missing third has to be said");
+        check (plain, { C4, C4 + 4, C4 + 9 }, "Amin/C",
+               "a complete triad inverted beats a sixth with a hole in it");
+        check (plain, { 64, 67, 71, 72, 74 }, "Cmaj9/E",
+               "a b13 on a minor triad means the root was picked wrong");
+
+        /*  "Simplify Note Names" gives every note its piano-key name, so the
+            double accidentals go and the chord symbols simplify with them -
+            but the scale label keeps the key as it was chosen.
+        */
+        std::printf ("simplify note names:\n");
+        const auto gbKey = keyFor ("Gb", "Major");
+        const auto plainGb = simplified (gbKey);
+
+        if (gbKey.names[6] != "Gb" || plainGb.names[6] != "F#")
+            fail ("Gb major should spell pitch class 6 as Gb, simplified as F#");
+        if (plainGb.label != gbKey.label)
+            fail ("the scale label should survive simplifying: " + plainGb.label);
+        if (plainGb.lit != gbKey.lit)
+            fail ("simplifying must not change which notes are lit");
+
+        const auto gx = keyFor ("A#", "Harmonic Minor");
+        if (gx.names[9] != "Gx" || simplified (gx).names[9] != "A")
+            fail ("A# harmonic minor spells pitch class 9 Gx, simplified A");
+
+        check (plainGb, { 54, 58, 61 }, "F#", "the chord symbol simplifies too");
+        std::printf ("  Gb Major reads F# simplified, and still says Gb Major\n");
+
+        //  No white highlight: the ring around a played note is white and a
+        //  white highlight would swallow it.
+        for (const auto& highlight : highlights)
+            if (std::string (highlight.name) == "White")
+                fail ("White is still in the palette; it clashes with the rings");
+        std::printf ("highlights: %zu colours, none of them white\n", highlights.size());
 
         // The circles keep the key's spelling: only the symbol simplifies.
         const auto sharpKey = keyFor ("A#", "Harmonic Minor");

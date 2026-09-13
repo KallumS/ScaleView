@@ -19,31 +19,59 @@ The plugin does not touch your audio: it passes both the audio and the MIDI
 through untouched and exists to be looked at, so it can sit on any track.
 
 This is a port of [ScaleView for REAPER](https://github.com/KallumS/ScaleView-for-Reaper),
-a ReaScript. The musical core is the same, verified against it note for note.
+a ReaScript. It matches **ScaleView Pro**, the one of the two scripts there that
+reads chords; the musical core is the same, verified against it note for note.
 
 ## Using it
 
 | Action | Result |
 | --- | --- |
 | Left-click | Scale list - pick a root under a scale type |
-| Right-click | Random Scale, note names on/off, highlight colour |
+| Right-click | Random Scale, note names on/off, Simplify Note Names, highlight colour |
 | Play | The notes are ringed and the chord is named |
 
 ### Chord detection
 
 Put it on a track that MIDI reaches and it names what you are holding. The
-**bass note decides**: B C# F# is `Bsus2` with B underneath but F#sus4 with F#
-underneath, and A C E G is `Amin7` or `C6` depending which is lowest. When the
-lowest note is not the root you get a slash chord (`C/E`); when neither the
-root nor a familiar shape is in the bass, the commoner chord wins and the bass
-follows the slash (`Amin7/G`). Anything it does not recognise is named as its
-notes (`C E`) rather than guessed at.
+chord is **read rather than looked up**: the third, fifth and seventh are
+matched against the closed vocabulary of qualities that have agreed names, and
+whatever is left over is described on top of it as a sixth, ninth, eleventh or
+thirteenth, altered or not. So a voicing nobody thought to put in a table still
+gets a symbol - `Cmin7(11)`, `C13b9`, `G7(maj7)`, `Fadd9Add11`.
+
+Every note that could be the root is costed and the cheapest reading wins,
+which is how the extensions come out as extensions rather than being discarded.
+The **bass is found separately** from the root, so inversions read as slash
+chords: B C# F# is `Bsus2` with B underneath but `F#sus4` with F# underneath,
+and A C E G is `Amin7` or `C6` depending which is lowest. Where two readings
+fit, the one holding a complete triad - a real third with a perfect fifth -
+wins, and the odd notes hang off it.
+
+The selected scale only breaks a draw: at equal cost a root that is a scale
+degree wins, then a reading whose notes sit in the scale. A chord from outside
+the key is still named for what it is, never filtered out. With no scale
+selected the naming quietly assumes C major, so it never goes silent - nothing
+lights up and no label names a key, and choosing C Major explicitly gives
+identical names.
+
+Measured against the whole of music21's core corpus - 3,194 files,
+363,963 sonorities of three or more pitch classes - the printed symbol accounts
+for exactly the notes played, with the right bass, **99.999%** of the time, and
+100% on the Bach chorales, the Chopin mazurkas and the standards vocabulary in
+every inversion. The four misses all carry eight pitch classes and are read out
+as a list of notes, which is deliberate: past a certain thickness there is no
+chord left to find, only a cluster.
 
 Chord roots are spelled for the key, so a chord on Gb reads `Gbmaj7` in Gb
-major and `F#maj7` in F# major. Chord symbols stop at one accidental though:
-Gb minor blues spells two of its notes Bbb and Dbb, and the circles show them
-that way because it is correct for the scale, but the chord they make reads
-`Amin/C`.
+major and `F#maj7` in F# major. Chord symbols stick to the eighteen spellings
+real keys are built on, though: Gb minor blues spells two of its notes Bbb and
+Dbb, and the circles show them that way because it is correct for the scale,
+but the chord they make reads `Amin/C`.
+
+**Simplify Note Names** switches the circles to plain piano-key names - always
+sharps, never a double accidental - without changing which notes light up or
+what the scale label says. Gb Major still says Gb Major; the circle just reads
+F#. The chord detection is untouched by it, only the names it prints.
 
 Unlike the ReaScript this was ported from, the plugin sees **all** the MIDI on
 its track, including MIDI items during playback - a script can only watch live
@@ -144,7 +172,8 @@ a host - it is the same suite the ReaScript has, ported. It checks all 288 root
 and scale combinations, that every seven-note scale uses each of the seven
 letters exactly once, that enharmonic pairs light the same circles while
 reading differently, that the fifteen standard major keys need no double
-accidentals, and that Random Scale spreads and never repeats itself.
+accidentals, that chord symbols no table ever held come out right, and that
+Random Scale spreads and never repeats itself.
 
 ```sh
 cmake -B build-tests -DSCALEVIEW_BUILD_PLUGIN=OFF
@@ -166,7 +195,7 @@ plugin and run by the same `ctest`.
 
 | | |
 | --- | --- |
-| `Source/ScaleModel.h` | The scales, the roots and the spelling engine. No JUCE, no host. |
+| `Source/ScaleModel.h` | The scales, the roots, the spelling engine and the chord reader. No JUCE, no host. |
 | `Source/PluginProcessor.*` | Audio and MIDI passthrough, held-note tracking, and the selection, saved with the project |
 | `Source/PluginEditor.*` | The icon and its two menus |
 | `Tests/TestScaleModel.cpp` | The musical core's tests - scales, spelling, chords |

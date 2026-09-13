@@ -30,6 +30,7 @@ enum MenuIds
     clearScaleId = 1,
     randomScaleId,
     showNoteNamesId,
+    simpleNamesId,
     highlightBaseId = 100,
     scaleBaseId     = 1000   // scaleBaseId + scaleIndex * 100 + rootIndex
 };
@@ -226,6 +227,7 @@ void ScaleViewEditor::showOptionsMenu()
     menu.addItem (randomScaleId, "Random Scale");
     menu.addSeparator();
     menu.addItem (showNoteNamesId, "Show note names", true, processor.getShowNoteNames());
+    menu.addItem (simpleNamesId, "Simplify Note Names", true, processor.getSimpleNames());
 
     juce::PopupMenu colours;
     for (size_t i = 0; i < scaleview::highlights.size(); ++i)
@@ -241,6 +243,8 @@ void ScaleViewEditor::showOptionsMenu()
                                 processor.setRandomScale();
                             else if (result == showNoteNamesId)
                                 processor.setShowNoteNames (! processor.getShowNoteNames());
+                            else if (result == simpleNamesId)
+                                processor.setSimpleNames (! processor.getSimpleNames());
                             else if (result >= highlightBaseId && result < scaleBaseId)
                                 processor.setHighlightIndex (result - highlightBaseId);
                         });

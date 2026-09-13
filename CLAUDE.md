@@ -70,18 +70,26 @@ ctest --test-dir build --output-on-failure
 
 `KallumS/ScaleView-for-Reaper` is the original, in Lua. The musical core here
 is a port and **must stay in step**: if spelling or chord naming changes in one,
-change it in the other.
+change it in the other. The chord engine in `ScaleModel.h` is a line-for-line
+port of that repository's, and every weight in it was arrived at by breaking a
+test there - read its CLAUDE.md before touching one.
 
-Both have been verified by diffing output, which is the technique to reuse
-rather than eyeballing cases:
+Parity is verified by **diffing output**, which is the technique to reuse rather
+than eyeballing cases. Write a dumper on each side that prints one line per
+case, run both, `diff`:
 
 - **Spelling:** all 288 root/scale combinations, lit notes and every note name
   including the ones outside the scale. Byte-identical.
-- **Chords:** 13,200 voicings - every three- and four-note pitch class set in
-  every bass position, across five keys including ones whose notes need double
-  accidentals. Byte-identical.
+- **Chords:** 36,283 voicings with no scale selected - every distinct sonority
+  from the Bach chorales, the Beethoven quartets, the Chopin mazurkas, the jazz
+  standards vocabulary and every three-to-five-note pitch class set - plus
+  1,679 voicings in each of ten keys including ones whose notes need double
+  accidentals. Byte-identical, about 53,000 names.
 
-Write a dumper on each side that prints one line per case, run both, `diff`.
+The ReaScript's `tools/runner.lua` reads MIDI note numbers on stdin and writes
+the name; a twenty-line C++ file doing the same against `chordName` is the other
+half. Watch out for `Root::name` being `const char*`: comparing it to `argv[1]`
+with `==` compares pointers, which cost a confusing five minutes.
 
 ## How the musical core works
 
@@ -93,14 +101,39 @@ while Db major, the same seven notes, reads Db Eb F Gb Ab Bb C. Scales that
 cannot take one letter per degree keep their conventional spelling, so major
 blues repeats a letter for its b3 and 3 and the diminished scales repeat one.
 
-Chords are named from the held pitch classes and the bass: every class is tried
-as a root, a reading with the root in the bass wins outright, otherwise the
-commoner chord wins and the bass follows a slash. `chords` is ordered by that
-priority - **the order is load-bearing**, and matches the ReaScript's table.
+Chords are **read, not looked up**. A table is matched exactly, so a voicing it
+does not hold reads out as a list of notes, and lengthening it never ends - a
+chord is a quality with any number of tones stacked on top. The old table here
+named 28% of all three-to-five-note voicings; this names all of them.
 
-`chordNoteName` is the one place the two spellings diverge on purpose: circles
-follow the key, chord symbols stop at one accidental, because Gb minor blues
-spells notes Bbb and Dbb and no one writes `Bbbmin`.
+The symbol splits in two. The **third, fifth and seventh** are a closed
+vocabulary - about thirty combinations, each with an agreed name - so that half
+is a table, `coreRank`, ordered by how common the quality is. Everything above
+it is **described**: whatever the core did not consume is read off as a sixth,
+ninth, eleventh or thirteenth, altered or not. Every candidate root is costed
+and the cheapest wins, where the cost covers how unusual the quality is, what
+its extensions cost, and whether the root had to be named after a slash - which
+is what keeps C E A as `Amin/C` rather than a C6 missing its fifth.
+
+The bass is found separately from the root, which is what makes inversions come
+out as slash chords. With no scale selected the naming assumes C major
+(`assumedKey`) rather than going quiet; the assumption is invisible, because no
+circle lights and choosing C major explicitly gives identical names.
+
+`chordNoteName` is the one place the two spellings diverge on purpose. Circles
+follow the key; a chord symbol is written with the eighteen spellings real keys
+are built on, the ones in `roots`. Anything else falls back to a plain name
+leaning the way the key does - the double accidentals Gb minor blues produces,
+because nobody writes `Bbbmin`, and the theoretical spellings nobody builds a
+chord on, B# among them.
+
+**Simplify Note Names** is one function, `simplified()`, which overwrites a
+key's twelve names with the plain sharp table and clears `usesFlats`. It is
+applied in exactly one place - `PluginProcessor::getKey()` - so everything
+downstream, circles and chord symbols alike, follows without knowing about it.
+Which notes light and what the scale label says are unaffected, because both
+come from the root and scale indices rather than from the names. Chord
+*detection* is untouched by it; only the names it prints change.
 
 ## Environment
 

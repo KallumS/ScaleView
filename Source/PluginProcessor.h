@@ -56,6 +56,7 @@ public:
     int getScaleIndex() const noexcept     { return scaleIndex; }
     int getHighlightIndex() const noexcept { return highlightIndex; }
     bool getShowNoteNames() const noexcept { return showNoteNames; }
+    bool getSimpleNames()   const noexcept { return simpleNames; }
 
     /// The lit circles and their names for the current selection.
     scaleview::Key getKey() const;
@@ -78,6 +79,7 @@ public:
     void setRandomScale();
     void setHighlightIndex (int index);
     void setShowNoteNames (bool shouldShow);
+    void setSimpleNames (bool shouldSimplify);
 
     /// The editor's last size, so reopening the window keeps it.
     juce::Point<int> getEditorSize() const noexcept { return { editorWidth, editorHeight }; }
@@ -102,6 +104,7 @@ private:
     int scaleIndex { -1 };
     int highlightIndex { 0 };
     bool showNoteNames { true };
+    bool simpleNames { false };   // name notes as piano keys, not for the key
 
     int editorWidth { 400 };
     int editorHeight { 200 };

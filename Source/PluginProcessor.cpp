@@ -140,7 +140,11 @@ juce::AudioProcessorEditor* ScaleViewProcessor::createEditor()
 
 scaleview::Key ScaleViewProcessor::getKey() const
 {
-    return scaleview::buildKey (rootIndex, scaleIndex);
+    const auto key = scaleview::buildKey (rootIndex, scaleIndex);
+
+    //  Everything that shows a note name comes through here - the circles, the
+    //  chord symbol - so the option only has to be applied once.
+    return simpleNames ? scaleview::simplified (key) : key;
 }
 
 void ScaleViewProcessor::setScale (int newRootIndex, int newScaleIndex)
@@ -178,6 +182,12 @@ void ScaleViewProcessor::setShowNoteNames (bool shouldShow)
     sendChangeMessage();
 }
 
+void ScaleViewProcessor::setSimpleNames (bool shouldSimplify)
+{
+    simpleNames = shouldSimplify;
+    sendChangeMessage();
+}
+
 //==============================================================================
 void ScaleViewProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
@@ -186,6 +196,7 @@ void ScaleViewProcessor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("root",  rootIndex  >= 0 ? juce::String (scaleview::roots[(size_t) rootIndex].name)   : juce::String(), nullptr);
     state.setProperty ("scale", scaleIndex >= 0 ? juce::String (scaleview::scales[(size_t) scaleIndex].name) : juce::String(), nullptr);
     state.setProperty ("highlight", juce::String (scaleview::highlights[(size_t) highlightIndex].name), nullptr);
+    state.setProperty ("simpleNames", simpleNames, nullptr);
     state.setProperty ("showNoteNames", showNoteNames, nullptr);
     state.setProperty ("editorWidth", editorWidth, nullptr);
     state.setProperty ("editorHeight", editorHeight, nullptr);
@@ -205,6 +216,7 @@ void ScaleViewProcessor::setStateInformation (const void* data, int sizeInBytes)
     rootIndex      = indexOfNamed (state.getProperty ("root").toString(),  rootNames());
     scaleIndex     = indexOfNamed (state.getProperty ("scale").toString(), scaleNames());
     highlightIndex = juce::jmax (0, indexOfNamed (state.getProperty ("highlight").toString(), highlightNames()));
+    simpleNames = state.getProperty ("simpleNames", false);
     showNoteNames  = state.getProperty ("showNoteNames", true);
 
     editorWidth  = state.getProperty ("editorWidth", 400);
