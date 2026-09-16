@@ -89,6 +89,11 @@ case, run both, `diff`:
   one doubles a note. It went through 97,346 real voicings taken from the
   corpora - 51,248 of them doubling a pitch class - in six keys: 584,076 names,
   byte-identical.
+- **The four naming changes from the Scaler comparison** (dim9, two-note chords
+  named by their third, the minor sixth against the half-diminished, and a
+  third beating a shape with none): 82,478 voicings in six keys, **every
+  two-note pair included**, byte-identical. A sweep of three-note-and-up
+  voicings cannot reach the two-note rule at all.
 
 The ReaScript's `tools/runner.lua` reads MIDI note numbers on stdin and writes
 the name; a twenty-line C++ file doing the same against `chordName` is the other

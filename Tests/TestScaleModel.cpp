@@ -227,7 +227,27 @@ int main()
         check (none, { 43, C4, 64, 69 }, "Amin7/G", "neither in the bass");
         check (none, { C4, C4 + 7 }, "C5");
         check (none, { C4 }, "C");
-        check (none, { C4, C4 + 4 }, "C E", "not a chord we know");
+        /*  A third names a two-note chord, and the missing fifth is said out
+            loud because with two notes it cannot be silent. Anything else two
+            notes can be is an interval and still reads out as notes. */
+        check (none, { C4, C4 + 4 }, "Cmaj(no5)", "a major third is a chord");
+        check (none, { 71, 74 }, "Bmin(no5)", "and so is a minor third");
+        check (none, { 64, C4 + 12 }, "Cmaj(no5)/E", "the lower note names the bass");
+        check (none, { C4, C4 + 2 }, "C D", "a second is an interval");
+
+        /*  Four readings moved after twelve chords were put through Scaler 3:
+            a dim7 with a ninth is a dim9; a minor sixth loses to the
+            half-diminished on its third; and a shape with a third beats one
+            without, even from an inversion. */
+        std::printf ("what the Scaler comparison moved:\n");
+        check (none, { C4, C4 + 2, C4 + 3, C4 + 6, C4 + 9 }, "Cdim9", "a dim7 with a ninth");
+        check (none, { C4, C4 + 16, C4 + 18, C4 + 21 }, "F#min7b5/C",
+               "A C E F# is the half-diminished");
+        check (none, { C4, C4 + 3, C4 + 7, C4 + 9 }, "Cmin6", "root position stays");
+        check (none, { 62, 63, 67, 69 }, "D#maj7b5/D", "was Dsus4b9, with no third");
+        check (none, { 64, 70, 74 }, "A#(b5)/E", "was E7b5(no3), with none either");
+        check (none, { 65, 69, 71 }, "F(b5)", "the case that rule came from");
+        check (none, { C4, C4 + 7, C4 + 10 }, "C7(no3)", "over a perfect fifth, unchanged");
 
         /*  A doubled degree of the key is read as root position. The bass is
             the lowest note and a slash names it, except where the root itself

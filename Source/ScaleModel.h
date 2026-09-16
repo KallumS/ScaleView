@@ -237,13 +237,25 @@ inline const std::map<std::string, int> coreRank {
     { "sus4/P/none", 10 }, { "sus2/P/none", 11 },
     { "min/P/maj7",  12 },
     { "maj/#/b7",    13 }, { "maj/b/b7",    14 }, { "maj/#/maj7", 15 },
-    { "sus4/P/b7",   16 }, { "sus2/P/b7",   17 },
-    { "sus4/P/maj7", 18 }, { "sus2/P/maj7", 19 },
+    /*  maj7b5 belongs in this list and was missing from it: every altered
+        fifth carrying a seventh that musicians play is named here, and
+        players write maj7b5 constantly as the Lydian tonic. Without it the
+        quality paid rankUnnamed plus rankTwiceOdd, 37 before any slash, and
+        lost to readings with no third in them at all. */
+    { "maj/b/maj7",  16 },
+    { "sus4/P/b7",   17 }, { "sus2/P/b7",   18 },
+    { "sus4/P/maj7", 19 }, { "sus2/P/maj7", 20 },
 
-    // A missing third is a different chord, not a thinner one, so these sit
-    // well below anything with a third in it.
-    { "none/P/b7",   30 }, { "none/P/maj7", 31 },
-    { "none/b/maj7", 32 }, { "none/b/b7",   33 }, { "none/P/none", 34 },
+    /*  A missing third is a different chord, not a thinner one, so these sit
+        well below anything with a third in it - and by more than a slash
+        costs. A third-less shape over a perfect fifth is a real voicing, but
+        one whose fifth is also altered is odd twice over, exactly as
+        rankTwiceOdd has it for the qualities that keep their third. Those two
+        sit past costInversion from an unnamed quality with a third (25), so
+        D E A# reads Bb(b5)/E rather than E7b5(no3). The perfect-fifth pair
+        stay where they were, which keeps C G Bb reading C7(no3). */
+    { "none/P/b7",   30 }, { "none/P/maj7", 31 }, { "none/P/none", 34 },
+    { "none/b/maj7", 41 }, { "none/b/b7",   42 },
 };
 
 //  A quality the table does not name is ranked by the interval that decides
@@ -273,6 +285,12 @@ inline constexpr int costAltered   =  5;  // b9, #9, #11, b13 colouring a chord
 inline constexpr int costClashing  = 18;  // one that does not belong there
 inline constexpr int costSusExtra  = 12;  // a suspension carrying added tones
 inline constexpr int costSixth     =  4;  // enough that C E A stays Amin/C
+/*  A minor sixth is charged one more than any other, because it is the one
+    sixth that is also something else: A C E F# is Amin6 and equally the
+    half-diminished on its third, F#min7b5. The two tie exactly at 4, and the
+    half-diminished is the name Scaler prints, the name jazznet's labels carry
+    and the name analysts give it. */
+inline constexpr int costMinSixth  =  5;
 
 struct Core { std::string third, fifth, seventh; std::array<bool, 12> used {}; };
 
@@ -458,7 +476,7 @@ inline Reading analyse (const std::array<bool, 12>& has, int root, int bass)
     {
         if (sixth)
         {
-            out.cost += costSixth;
+            out.cost += (c.third == "min" && c.fifth == "P") ? costMinSixth : costSixth;
 
             // The sixth stands where a seventh would, so the symbol is rebuilt
             // around it. An altered fifth has to survive that: C Eb G# A is
@@ -475,6 +493,18 @@ inline Reading analyse (const std::array<bool, 12>& has, int root, int bass)
             else if (c.third == "maj")  out.name = c.fifth == "#" ? "aug6" : "6" + mark;
             else if (c.third == "none") out.name = "6" + mark;
             else                        out.name += "(add6)";
+        }
+
+        /*  A diminished seventh carrying a ninth is a dim9, not a dim7 with a
+            note stuck on the end - the bb7 only sits in this branch because it
+            is spelled as a sixth. Only the spelling changes: it still costs
+            what an added tone costs, so which reading wins is untouched. */
+        if (c.seventh == "bb7" && naturals[9])
+        {
+            naturals[9] = false;
+            const auto at = out.name.find ("dim7");
+            if (at != std::string::npos) out.name.replace (at, 4, "dim9");
+            out.cost += costAdd;
         }
 
         for (const int degree : { 9, 11, 13 })
@@ -634,8 +664,16 @@ inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
         return spelled;
     };
 
-    //  Two notes are an interval rather than a chord, and only the bare fifth
-    //  has a name of its own.
+    /*  Two notes are an interval rather than a chord, with two exceptions: the
+        bare fifth, and a third.
+
+        A third is enough to name a chord - B D is a B minor, C E a C major -
+        but the missing fifth cannot be silent here the way it is in a fuller
+        voicing, since printing "C" for C E would claim a G nobody is playing.
+        A third also has only one reading: four semitones are a major third one
+        way and a minor sixth the other, and only one of those has its third.
+        Everything else two notes can be is an interval and reads out as
+        notes. */
     if (count == 2)
     {
         for (int root = 0; root < 12; ++root)
@@ -647,6 +685,19 @@ inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
                     name += "/" + chordNoteName (bass, key);
                 return name;
             }
+
+        for (int root = 0; root < 12; ++root)
+        {
+            if (! classes[static_cast<size_t> (root)]) continue;
+            const char* quality = classes[static_cast<size_t> ((root + 4) % 12)] ? "maj"
+                                : classes[static_cast<size_t> ((root + 3) % 12)] ? "min"
+                                : nullptr;
+            if (quality == nullptr) continue;
+            std::string name = chordNoteName (root, key) + quality + "(no5)";
+            if (! readAsRootPosition (root, bass, voices, key))
+                name += "/" + chordNoteName (bass, key);
+            return name;
+        }
 
         return spellOut();
     }
