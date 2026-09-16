@@ -85,6 +85,10 @@ case, run both, `diff`:
   standards vocabulary and every three-to-five-note pitch class set - plus
   1,679 voicings in each of ten keys including ones whose notes need double
   accidentals. Byte-identical, about 53,000 names.
+- **The doubled-root bass rule:** a sweep cannot test it, because no voicing in
+  one doubles a note. It went through 97,346 real voicings taken from the
+  corpora - 51,248 of them doubling a pitch class - in six keys: 584,076 names,
+  byte-identical.
 
 The ReaScript's `tools/runner.lua` reads MIDI note numbers on stdin and writes
 the name; a twenty-line C++ file doing the same against `chordName` is the other
@@ -116,9 +120,20 @@ its extensions cost, and whether the root had to be named after a slash - which
 is what keeps C E A as `Amin/C` rather than a C6 missing its fifth.
 
 The bass is found separately from the root, which is what makes inversions come
-out as slash chords. With no scale selected the naming assumes C major
-(`assumedKey`) rather than going quiet; the assumption is invisible, because no
-circle lights and choosing C major explicitly gives identical names.
+out as slash chords. It is the lowest note sounding, with one exception
+(`readAsRootPosition`): a root sounding in more than one octave that is a
+first, third or fifth degree of the key reads as root position and loses the
+slash, so E G C C is `C` rather than `C/E`. That is how Scaler reads a doubled
+root, and it was the last disagreement with it. The rule can only ever remove a
+slash, never invent one, and it leaves the cost model alone - the reading is
+still chosen with the lowest note as the bass. The degrees come off the
+selected scale (`Key::tonic`), so F A D D is `Dmin/F` in C major and `Dmin` in
+D minor.
+
+With no scale selected the naming assumes C major (`assumedKey`, and
+`assumedTonic` for the rule above) rather than going quiet; the assumption is
+invisible, because no circle lights and choosing C major explicitly gives
+identical names.
 
 `chordNoteName` is the one place the two spellings diverge on purpose. Circles
 follow the key; a chord symbol is written with the eighteen spellings real keys

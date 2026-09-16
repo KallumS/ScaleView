@@ -229,6 +229,23 @@ int main()
         check (none, { C4 }, "C");
         check (none, { C4, C4 + 4 }, "C E", "not a chord we know");
 
+        /*  A doubled degree of the key is read as root position. The bass is
+            the lowest note and a slash names it, except where the root itself
+            is sounding in two octaves and is a first, third or fifth degree of
+            the key: that is how a chord is voiced around its root rather than
+            inverted, and the slash comes off. The key decides which notes
+            qualify, so the same four notes are Dmin/F in C major and Dmin in
+            D minor. The rule can only ever remove a slash. */
+        std::printf ("a doubled root of the key takes the bass:\n");
+        check (none, { 52, 55, C4, 72 }, "C", "E G C C - the root in two octaves");
+        check (none, { 52, 55, C4 }, "C/E", "one C and it is a first inversion");
+        check (none, { 52, 55, C4, 71 }, "Cmaj7/E", "doubling something else does nothing");
+        check (none, { 53, 57, 62, 74 }, "Dmin/F", "D is no 1st, 3rd or 5th of C major");
+        check (keyFor ("D", "Minor (Natural)"), { 53, 57, 62, 74 }, "Dmin",
+               "in D minor it is one");
+        check (keyFor ("D", "Minor (Natural)"), { 53, 57, 62 }, "Dmin/F",
+               "an undoubled root is still inverted");
+
         // Roots follow the key, as the scale names do.
         std::printf ("chords spelled for the key:\n");
         check (keyFor ("Gb", "Major"), { 54, 58, 61 }, "Gb", "not F#");

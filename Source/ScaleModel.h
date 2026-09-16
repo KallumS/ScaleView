@@ -150,6 +150,7 @@ inline std::string spellAs (int letter, int pitchClass)
 struct Key
 {
     std::array<bool, 12> lit {};
+    std::array<bool, 12> tonic {};  // its 1st, 3rd and 5th degrees, for the bass
     std::array<std::string, 12> names {};
     std::string label { "No scale selected" };
     bool hasScale { false };
@@ -183,6 +184,8 @@ inline Key buildKey (int rootIndex, int scaleIndex)
         const auto name = spellAs (root.letter + scale.letterSteps[degree], pc);
 
         key.lit[static_cast<size_t> (pc)] = true;
+        if (degree == 0 || degree == 2 || degree == 4)   // the 1st, 3rd and 5th
+            key.tonic[static_cast<size_t> (pc)] = true;
 
         if (! name.empty())
         {
@@ -565,17 +568,53 @@ inline constexpr std::array<bool, 12> assumedKey {
     true, false, true, false, true, true, false, true, false, true, false, true
 };
 
+//  The same assumption's first, third and fifth degrees - C, E and G - for the
+//  doubled-degree rule below. Change the assumed key and this changes with it.
+inline constexpr std::array<bool, 12> assumedTonic {
+    true, false, false, false, true, false, false, true, false, false, false, false
+};
+
+/*  A doubled degree of the key claims the bass.
+
+    The bass is the lowest note sounding - that is what a slash chord names,
+    and everything else here rests on it. The one exception is a root that is a
+    first, third or fifth degree of the key and is sounding in more than one
+    octave: a doubled root is how a chord is voiced in root position, so the
+    reading is that the player laid the chord out around its root rather than
+    inverting it, and the slash comes off.
+
+    It can only ever remove a slash, never invent one, so what follows a slash
+    is always the lowest note. The cost model is untouched: the reading is
+    still chosen with the lowest note as the bass, and this decides only how
+    the winner is written down.
+*/
+inline bool readAsRootPosition (int root, int bass, const std::array<int, 12>& voices,
+                                const Key& key)
+{
+    if (root == bass) return true;
+    if (voices[static_cast<size_t> (root)] < 2) return false;
+    const auto& tonic = key.hasScale ? key.tonic : assumedTonic;
+    return tonic[static_cast<size_t> (root)];
+}
+
 /*  Names the chord made by the notes being held, or an empty string when
     nothing is. heldNotes are MIDI note numbers; the lowest is the bass, which
-    is found separately from the root and named after a slash when they differ.
+    is found separately from the root and named after a slash when they differ -
+    unless the root is doubled and is a degree of the key's tonic triad, which
+    reads as root position. See readAsRootPosition.
 */
 inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
 {
     if (heldNotes.empty()) return {};
 
     std::array<bool, 12> classes {};
+    std::array<int, 12> voices {};   // how many octaves each pitch class sounds in
     for (const int note : heldNotes)
-        classes[static_cast<size_t> (((note % 12) + 12) % 12)] = true;
+    {
+        const auto pc = static_cast<size_t> (((note % 12) + 12) % 12);
+        classes[pc] = true;
+        ++voices[pc];
+    }
 
     const int bass = ((*std::min_element (heldNotes.begin(), heldNotes.end()) % 12) + 12) % 12;
 
@@ -604,7 +643,8 @@ inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
                 && classes[static_cast<size_t> ((root + 7) % 12)])
             {
                 std::string name = chordNoteName (root, key) + "5";
-                if (root != bass) name += "/" + chordNoteName (bass, key);
+                if (! readAsRootPosition (root, bass, voices, key))
+                    name += "/" + chordNoteName (bass, key);
                 return name;
             }
 
@@ -643,7 +683,8 @@ inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
     }
 
     std::string name = chordNoteName (best.root, key) + best.name;
-    if (best.root != bass) name += "/" + chordNoteName (bass, key);
+    if (! readAsRootPosition (best.root, bass, voices, key))
+        name += "/" + chordNoteName (bass, key);
     return name;
 }
 
