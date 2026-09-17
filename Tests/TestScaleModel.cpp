@@ -249,6 +249,15 @@ int main()
         check (none, { 65, 69, 71 }, "F(b5)", "the case that rule came from");
         check (none, { C4, C4 + 7, C4 + 10 }, "C7(no3)", "over a perfect fifth, unchanged");
 
+        /*  With both fifths sounding and no perfect one between them, which is
+            the fifth is a choice, so both readings are costed. Found by running
+            Wikipedia's list of chords through the engine. */
+        check (none, { C4, C4 + 4, C4 + 6, C4 + 8, C4 + 11 }, "Cmaj7#5#11", "was Cmaj7b5b13");
+        check (none, { C4, C4 + 14, C4 + 16, C4 + 18, C4 + 20, C4 + 22 }, "Caug9#11",
+               "the whole-tone six");
+        check (none, { C4, C4 + 4, C4 + 6, C4 + 11 }, "Cmaj7b5", "one fifth is unchanged");
+        check (none, { C4, C4 + 4, C4 + 8, C4 + 11 }, "Cmaj7#5", "and so is one raised");
+
         /*  A doubled degree of the key is read as root position. The bass is
             the lowest note and a slash names it, except where the root itself
             is sounding in two octaves and is a first, third or fifth degree of

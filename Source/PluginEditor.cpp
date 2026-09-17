@@ -11,7 +11,7 @@ const juce::Colour colourUnlit      { 77, 79, 89 };
 const juce::Colour colourLabel      { 184, 189, 204 };
 const juce::Colour colourNameUnlit  { 158, 163, 179 };
 const juce::Colour colourNameLit    { 15, 31, 28 };
-const juce::Colour colourHeld       { 255, 255, 255 };   // ring around a note being played
+const juce::Colour colourHeld       { 255, 255, 255 };   // ring around a played note, on an unlit circle
 const juce::Colour colourChord      { 242, 245, 250 };   // brighter than a scale name
 
 juce::Colour highlightColour (int index)
@@ -121,7 +121,13 @@ void ScaleViewEditor::drawCircle (juce::Graphics& g, float centreX, float centre
 
     if (heldClasses[static_cast<size_t> (pitchClass)])
     {
-        g.setColour (colourHeld);
+        /*  The ring has to be visible against what it is drawn on. White
+            reads at 8.2:1 against an unlit circle but 1.6:1 to 2.4:1 against
+            a lit one, because every highlight is pale enough to carry dark
+            note names - so a played note inside the scale looked unringed.
+            It follows the note names instead: dark on a lit circle, white on
+            an unlit one. */
+        g.setColour (lit ? colourNameLit : colourHeld);
         g.drawEllipse (centreX - radius - 2.0f, centreY - radius - 2.0f,
                        (radius + 2.0f) * 2.0f, (radius + 2.0f) * 2.0f, 1.5f);
     }

@@ -294,8 +294,15 @@ inline constexpr int costMinSixth  =  5;
 
 struct Core { std::string third, fifth, seventh; std::array<bool, 12> used {}; };
 
-//  Reading the intervals present into a third, a fifth and a seventh.
-inline Core readCore (const std::array<bool, 12>& has)
+/*  Reading the intervals present into a third, a fifth and a seventh.
+
+    Where both a flattened and a raised fifth are sounding, which one is *the*
+    fifth is a real choice and not a lookup, so preferSharpFive lets the caller
+    ask for the other reading and cost them both. C E F# G# B was named
+    Cmaj7b5b13 because the flattened fifth was taken greedily, leaving the G#
+    described as a b13 over a chord that is not at home with one; the other way
+    round it is Cmaj7#5#11, 14 cheaper. */
+inline Core readCore (const std::array<bool, 12>& has, bool preferSharpFive = false)
 {
     Core c;
     c.used[0] = true;
@@ -307,6 +314,7 @@ inline Core readCore (const std::array<bool, 12>& has)
     else             { c.third = "none"; }
 
     if      (has[7]) { c.fifth = "P"; c.used[7] = true; }
+    else if (has[6] && has[8] && preferSharpFive) { c.fifth = "#"; c.used[8] = true; }
     else if (has[6]) { c.fifth = "b"; c.used[6] = true; }
     else if (has[8]) { c.fifth = "#"; c.used[8] = true; }
     else             { c.fifth = "none"; }
@@ -375,9 +383,10 @@ struct Reading { std::string name; int cost = 0; int rank = 0; };
     the whole of the musical judgement: how unusual the quality is, what its
     extensions cost, and whether the root had to be named after a slash.
 */
-inline Reading analyse (const std::array<bool, 12>& has, int root, int bass)
+inline Reading analyseAs (const std::array<bool, 12>& has, int root, int bass,
+                          bool preferSharpFive)
 {
-    const Core c = readCore (has);
+    const Core c = readCore (has, preferSharpFive);
     const int rank = rankOf (c.third, c.fifth, c.seventh);
 
     Reading out;
@@ -557,6 +566,20 @@ inline Reading analyse (const std::array<bool, 12>& has, int root, int bass)
 
     if (root != bass) out.cost += costInversion;
     return out;
+}
+
+/*  With both fifths sounding and no perfect one between them, neither is
+    obviously the fifth, so both readings are costed and the cheaper wins.
+    Everywhere else there is nothing to choose and the second is not built. */
+inline Reading analyse (const std::array<bool, 12>& has, int root, int bass)
+{
+    Reading reading = analyseAs (has, root, bass, false);
+    if (has[6] && has[8] && ! has[7])
+    {
+        const Reading alt = analyseAs (has, root, bass, true);
+        if (alt.cost < reading.cost) return alt;
+    }
+    return reading;
 }
 
 /*  A chord symbol is written with the spellings real keys are built on - the
