@@ -89,11 +89,10 @@ case, run both, `diff`:
   one doubles a note. It went through 97,346 real voicings taken from the
   corpora - 51,248 of them doubling a pitch class - in six keys: 584,076 names,
   byte-identical.
-- **Costing the fifth rather than guessing it**, and the held ring's colour.
-  The ring is dark on a lit circle and white on an unlit one, because white
-  reads at only 1.6:1 to 2.4:1 against a highlight - `PluginEditor.cpp` is not
-  in the test build, so that one line is verified by being the same condition
-  as the note-name line below it, not by a test.
+- **Costing the fifth rather than guessing it.** The held ring is **always
+  white**: making it depend on the circle underneath was tried and looked
+  broken, because the ring is drawn outside the fill and so contrasts with the
+  background rather than with the highlight.
 - **The four naming changes from the Scaler comparison** (dim9, two-note chords
   named by their third, the minor sixth against the half-diminished, and a
   third beating a shape with none): 82,478 voicings in six keys, **every
