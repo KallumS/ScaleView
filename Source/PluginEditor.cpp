@@ -8,11 +8,11 @@ constexpr float iconAspect = 2.0f;
 
 const juce::Colour colourBackground { 35, 39, 46 };
 const juce::Colour colourUnlit      { 77, 79, 89 };
-const juce::Colour colourLabel      { 184, 189, 204 };
+const juce::Colour colourLabel      { 191, 197, 206 };  // #BFC5CE
 const juce::Colour colourNameUnlit  { 158, 163, 179 };
 const juce::Colour colourNameLit    { 20, 23, 28 };   // #14171c, on a lit circle
 const juce::Colour colourHeld       { 255, 242,   0 };   // #FFF200, ring around a played note, always
-const juce::Colour colourChord      { 242, 245, 250 };   // brighter than a scale name
+const juce::Colour colourChord      { 242, 244, 247 };  // #F2F4F7, brighter than a scale name
 
 juce::Colour highlightColour (int index)
 {

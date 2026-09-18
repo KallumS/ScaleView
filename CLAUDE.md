@@ -159,6 +159,27 @@ Which notes light and what the scale label says are unaffected, because both
 come from the root and scale indices rather than from the names. Chord
 *detection* is untouched by it; only the names it prints change.
 
+## The house colour scheme
+
+The colours come from a scheme the user is standardising across their projects;
+**it is written out in full in the ReaScript repo's CLAUDE.md**, and this file
+records only what the plugin has to honour.
+
+Carriers: Accent `#FFF200` (`colourHeld`), Ground `#23272E` (`colourBackground`),
+Ink `#14171C` (`colourNameLit`), Controls `#A9AFBA` (not used here yet).
+`colourLabel` is `#BFC5CE` and `colourChord` is `#F2F4F7`, both ramp entries.
+
+Two rules travel with it: every button needs `#14171C` ink, the unselected ones
+included; and hover/held states are derived from the base by +/-18% toward white
+and black rather than stored separately. The grey ramp's load-bearing property
+is **R < G < B** on every entry - a neutral grey reads flat beside the yellow,
+so a new grey has to be picked from the ramp, not mixed.
+
+`colourUnlit` (`#4D4F59`) and `colourNameUnlit` (`#9EA3B3`) are deliberately
+still off the scheme, pending a decision recorded in the ReaScript repo: the
+scheme's unchosen button is light with dark ink, which here would make the notes
+outside the key the brightest thing in the icon.
+
 ## Environment
 
 - `raw.githubusercontent.com` is reachable, so JUCE, CLAP, the VST3 SDK and
