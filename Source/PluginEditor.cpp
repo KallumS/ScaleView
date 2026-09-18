@@ -6,7 +6,7 @@ namespace
 // it, centred, rather than stretching.
 constexpr float iconAspect = 2.0f;
 
-const juce::Colour colourBackground { 26, 26, 31 };
+const juce::Colour colourBackground { 35, 39, 46 };
 const juce::Colour colourUnlit      { 77, 79, 89 };
 const juce::Colour colourLabel      { 184, 189, 204 };
 const juce::Colour colourNameUnlit  { 158, 163, 179 };
