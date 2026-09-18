@@ -108,9 +108,11 @@ struct Highlight
     }
 };
 
-/*  Deliberately no white: the ring around a note being played is white, and a
-    white highlight swallows it. A saved "White" from an older build resolves to
-    no index and falls back to the default, which is tested.
+/*  Deliberately nothing the ring around a played note could hide in: that ring
+    is #FFF200, so a highlight of the same colour would swallow it where the two
+    touch. Gold is the nearest the palette comes, at 1.4:1. A saved "White" from
+    an older build resolves to no index and falls back to the default, which is
+    tested.
 */
 inline const std::vector<Highlight> highlights {
     { "Teal",        51, 204, 158 },

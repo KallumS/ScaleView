@@ -162,18 +162,20 @@ int main()
             editor->paintEntireComponent (g, true);
         }
 
-        // The ring drawn around a held note is white; nothing else in the icon is.
-        int whitePixels = 0;
+        //  The ring drawn around a held note is #FFF200; nothing else in the
+        //  icon is. Keep this in step with colourHeld in PluginEditor.cpp.
+        int ringPixels = 0;
         for (int y = 0; y < image.getHeight(); ++y)
             for (int x = 0; x < image.getWidth(); ++x)
             {
                 const auto pixel = image.getPixelAt (x, y);
-                if (pixel.getRed() > 250 && pixel.getGreen() > 250 && pixel.getBlue() > 250)
-                    ++whitePixels;
+                if (pixel.getRed() > 250 && pixel.getGreen() > 237
+                    && pixel.getGreen() < 247 && pixel.getBlue() < 8)
+                    ++ringPixels;
             }
 
-        check (whitePixels > 100, "the editor draws rings around the held notes ("
-               + juce::String (whitePixels) + " white pixels)");
+        check (ringPixels > 100, "the editor draws rings around the held notes ("
+               + juce::String (ringPixels) + " ring pixels)");
 
         if (auto* path = std::getenv ("SCALEVIEW_RENDER_TO"))
         {

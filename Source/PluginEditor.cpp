@@ -10,8 +10,8 @@ const juce::Colour colourBackground { 35, 39, 46 };
 const juce::Colour colourUnlit      { 77, 79, 89 };
 const juce::Colour colourLabel      { 184, 189, 204 };
 const juce::Colour colourNameUnlit  { 158, 163, 179 };
-const juce::Colour colourNameLit    { 15, 31, 28 };
-const juce::Colour colourHeld       { 255, 255, 255 };   // ring around a note being played, always
+const juce::Colour colourNameLit    { 20, 23, 28 };   // #14171c, on a lit circle
+const juce::Colour colourHeld       { 255, 242,   0 };   // #FFF200, ring around a played note, always
 const juce::Colour colourChord      { 242, 245, 250 };   // brighter than a scale name
 
 juce::Colour highlightColour (int index)
@@ -121,10 +121,10 @@ void ScaleViewEditor::drawCircle (juce::Graphics& g, float centreX, float centre
 
     if (heldClasses[static_cast<size_t> (pitchClass)])
     {
-        /*  Always white, no exceptions - making it depend on the circle
+        /*  Always colourHeld, no exceptions - making it depend on the circle
             underneath was tried and looked broken. The ring is drawn OUTSIDE
             the filled circle, so what it has to contrast with is the
-            background, not the fill, and white is what reads there. */
+            background, not the fill, and #FFF200 reads 12.8:1 there. */
         g.setColour (colourHeld);
         g.drawEllipse (centreX - radius - 2.0f, centreY - radius - 2.0f,
                        (radius + 2.0f) * 2.0f, (radius + 2.0f) * 2.0f, 1.5f);

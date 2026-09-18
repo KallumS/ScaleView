@@ -343,12 +343,13 @@ int main()
         check (plainGb, { 54, 58, 61 }, "F#", "the chord symbol simplifies too");
         std::printf ("  Gb Major reads F# simplified, and still says Gb Major\n");
 
-        //  No white highlight: the ring around a played note is white and a
-        //  white highlight would swallow it.
+        //  No highlight may be the ring's own colour: the ring around a played
+        //  note is #FFF200 and a highlight of that would swallow it. Keep this
+        //  in step with colourHeld in PluginEditor.cpp.
         for (const auto& highlight : highlights)
-            if (std::string (highlight.name) == "White")
-                fail ("White is still in the palette; it clashes with the rings");
-        std::printf ("highlights: %zu colours, none of them white\n", highlights.size());
+            if (highlight.red == 255 && highlight.green == 242 && highlight.blue == 0)
+                fail (std::string (highlight.name) + " is the colour the rings use");
+        std::printf ("highlights: %zu colours, none of them the ring's\n", highlights.size());
 
         // The circles keep the key's spelling: only the symbol simplifies.
         const auto sharpKey = keyFor ("A#", "Harmonic Minor");
