@@ -110,9 +110,11 @@ struct Highlight
 
 /*  Deliberately nothing the ring around a played note could hide in: that ring
     is #FFF200, so a highlight of the same colour would swallow it where the two
-    touch. Gold is the nearest the palette comes, at 1.4:1. A saved "White" from
-    an older build resolves to no index and falls back to the default, which is
-    tested.
+    touch. White is the nearest the palette comes, at 1.17:1 - the tightest the
+    margin has been, and only on the antialiased edge, since both ring strokes
+    are drawn outside the filled circle. White was barred while the ring was
+    white and became free when the ring turned yellow; Gold, which it replaced,
+    resolves to no index and falls back to the default, which is tested.
 */
 inline const std::vector<Highlight> highlights {
     { "Teal",        51, 204, 158 },
@@ -120,7 +122,7 @@ inline const std::vector<Highlight> highlights {
     { "Light Green", 140, 222, 102 },
     { "Light Blue", 102, 184, 250 },
     { "Light Pink", 250, 158, 199 },
-    { "Gold",       242, 199,  56 },
+    { "White",      255, 255, 255 },
 };
 
 /*  Spells pitch class pc using the given letter, e.g. letter G and pc 6 gives

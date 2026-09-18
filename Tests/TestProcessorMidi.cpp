@@ -133,6 +133,27 @@ int main()
     check (restored.getRootIndex() == 17 && restored.getScaleIndex() == 2
            && restored.getHighlightIndex() == 4,
            "the selection survives a save and reload of plugin state");
+
+    //  The highlight is stored by name, so a name that is no longer in the
+    //  palette has to fall back to the default rather than break. Gold was
+    //  swapped out for White; this is the same guard the ReaScript suites
+    //  keep, and it is why reordering the table cannot repoint a choice.
+    //  The root and scale are checked too, so a state block that failed to
+    //  parse at all could not pass this by leaving the default in place.
+    {
+        auto xml = juce::AudioProcessor::getXmlFromBinary (state.getData(), (int) state.getSize());
+        check (xml != nullptr, "the saved state is readable XML");
+        xml->setAttribute ("highlight", "Gold");
+
+        juce::MemoryBlock patched;
+        juce::AudioProcessor::copyXmlToBinary (*xml, patched);
+
+        ScaleViewProcessor dropped;
+        dropped.setStateInformation (patched.getData(), (int) patched.getSize());
+        check (dropped.getHighlightIndex() == 0
+               && dropped.getRootIndex() == 17 && dropped.getScaleIndex() == 2,
+               "a highlight name no longer in the palette falls back to the default");
+    }
     check (restored.getKey().label == processor.getKey().label,
            "and restores the same key: " + juce::String (restored.getKey().label));
 
