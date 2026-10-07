@@ -258,6 +258,27 @@ int main()
         check (none, { C4, C4 + 4, C4 + 6, C4 + 11 }, "Cmaj7b5", "one fifth is unchanged");
         check (none, { C4, C4 + 4, C4 + 8, C4 + 11 }, "Cmaj7#5", "and so is one raised");
 
+        /*  An altered dominant on its own root is at home with its alterations
+            whatever the fifth is doing - ScaleView Pro, October 2026. These
+            came back as some other chord over a slash. Found by round-tripping
+            the chord symbols on 502 public-domain lead sheets. */
+        std::printf ("altered dominants:\n");
+        const int C3 = 48;
+        check (none, { C3, C4 + 4, C4 + 8, C4 + 10, C4 + 13 }, "Caug7b9", "C7#5b9, was A#min9b5/C");
+        check (none, { C3, C4 + 4, C4 + 6, C4 + 10, C4 + 13 }, "C7b5b9", "was F#7#11/C");
+        check (none, { C3, C4 + 4, C4 + 6, C4 + 10, C4 + 15 }, "C7b5#9", "was D#min6b9/C");
+        check (none, { C3, C4 + 4, C4 + 10, C4 + 13, C4 + 20 }, "Caug7b9", "C7b9b13, was A#min9b5/C");
+        check (none, { C3, C4 + 4, C4 + 8, C4 + 10, C4 + 15 }, "Caug7#9", "C7#5#9 already read right");
+        check (none, { C3, C4 + 3, C4 + 6, C4 + 10, C4 + 14 }, "Cmin9b5",
+               "the half-diminished is not a dominant, and is unchanged");
+
+        /*  At equal cost, after the key, a reading with no slash beats one
+            with - ScaleView Pro, October 2026. */
+        std::printf ("a draw goes to the reading without a slash:\n");
+        check (none, { C3, C4 + 2, C4 + 7, C4 + 10 }, "C7sus2", "was GminAdd11/C");
+        check (none, { C3, C4 + 2, C4 + 5, C4 + 7 }, "Csus4Add9", "G7sus over C, was Dmin7(11)/C");
+        check (none, { 45, C4, 64, 67 }, "Amin7", "a real difference in cost still decides");
+
         /*  A doubled degree of the key is read as root position. The bass is
             the lowest note and a slash names it, except where the root itself
             is sounding in two octaves and is a first, third or fifth degree of

@@ -537,11 +537,21 @@ inline Reading analyseAs (const std::array<bool, 12>& has, int root, int bass,
     const bool dominant = c.third == "maj" && c.seventh == "b7";
     const bool triad = (c.third == "maj" || c.third == "min") && c.fifth == "P";
 
+    /*  An altered fifth is no bar on a dominant standing on its own root: over
+        a major third and a flat seventh with the root in the bass, a b9 or #9
+        over a b5 or #5 is the altered dominant - 7#5b9, 7b5#9, 7b9b13 - which
+        every lead sheet writes. Only from the bass; allowing it from an
+        inversion too read F A C G C# over C as Aaug7#9/C. Ported from
+        ScaleView Pro, October 2026.
+    */
+    const bool plainFifth = c.fifth != "b" && c.fifth != "#";
+
     for (const auto& token : altered)
     {
-        const bool athome = c.fifth != "b" && c.fifth != "#" && token != "maj7"
-                            && (token == "#11" || dominant
-                                || (triad && token != "b13"));
+        const bool athome = token != "maj7"
+                            && ((dominant && (plainFifth || root == bass))
+                                || (plainFifth && (token == "#11"
+                                                   || (triad && token != "b13"))));
 
         //  A flattened sixth is a b13 only when a seventh is under it; without
         //  one it is an added flat sixth. Both sevenths at once is a cluster,
@@ -732,7 +742,8 @@ inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
     //  Past a certain thickness there is no chord left to find, only a cluster.
     if (count > 7) return spellOut();
 
-    struct Best { int root = -1; std::string name; int cost = 0, rank = 0, fit = 0; };
+    struct Best { int root = -1; std::string name; int cost = 0, rank = 0, fit = 0;
+                  bool slash = false; };
     Best best;
 
     for (int root = 0; root < 12; ++root)
@@ -747,17 +758,21 @@ inline std::string chordName (const std::vector<int>& heldNotes, const Key& key)
         const Reading reading = analyse (has, root, bass);
 
         //  The scale only breaks a draw: a root that is a degree of it wins,
-        //  then a reading whose notes sit in it, then the commoner quality.
+        //  then a reading whose notes sit in it, then a reading that needs no
+        //  slash (ScaleView Pro, October 2026), then the commoner quality.
         const auto& lit = key.hasScale ? key.lit : assumedKey;
         int fit = lit[static_cast<size_t> (root)] ? 100 : 0;
         for (int pc = 0; pc < 12; ++pc)
             if (classes[static_cast<size_t> (pc)] && lit[static_cast<size_t> (pc)]) ++fit;
 
+        const bool slash = root != bass;
         if (best.root < 0
             || reading.cost < best.cost
             || (reading.cost == best.cost && fit > best.fit)
-            || (reading.cost == best.cost && fit == best.fit && reading.rank < best.rank))
-            best = { root, reading.name, reading.cost, reading.rank, fit };
+            || (reading.cost == best.cost && fit == best.fit && best.slash && ! slash)
+            || (reading.cost == best.cost && fit == best.fit && slash == best.slash
+                && reading.rank < best.rank))
+            best = { root, reading.name, reading.cost, reading.rank, fit, slash };
     }
 
     std::string name = chordNoteName (best.root, key) + best.name;

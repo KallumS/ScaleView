@@ -68,9 +68,12 @@ ctest --test-dir build --output-on-failure
 
 ## Parity with the ReaScript
 
-`KallumS/ScaleView-for-Reaper` is the original, in Lua. The musical core here
-is a port and **must stay in step**: if spelling or chord naming changes in one,
-change it in the other. The chord engine in `ScaleModel.h` is a line-for-line
+`KallumS/ScaleView-for-Reaper` is the original, in Lua, and **ScaleView Pro
+(`reascripts/ScaleView Pro.lua`) is the reference** - the user's word is that
+it is the definitive chord detector. The musical core here is a port and
+**must stay in step**: a naming change is made and measured in Pro first, then
+ported here, and parity is checked against Pro's output, never the other way
+round. The chord engine in `ScaleModel.h` is a line-for-line
 port of that repository's, and every weight in it was arrived at by breaking a
 test there - read its CLAUDE.md before touching one.
 
@@ -93,6 +96,16 @@ case, run both, `diff`:
   white**: making it depend on the circle underneath was tried and looked
   broken, because the ring is drawn outside the fill and so contrasts with the
   background rather than with the highlight.
+- **October 2026: two changes ported from Pro** - an altered dominant on its
+  own root keeps its alterations whatever the fifth (C7#5b9 is `Caug7b9`, not
+  `A#min9b5/C`), and a draw at equal cost and key fit goes to the reading with
+  no slash before the commoner quality (C D G Bb over C is `C7sus2`). Diffed
+  against `ScaleView Pro.lua` at `f9e2691`: 60,212 voicings - the 17,688
+  sweep, every one- and two-note chord, and all 37,106 distinct sonorities of
+  music21's core corpus, doublings included - in no key and eight keys
+  (C, Gb, F#, Cb major, A minor, D Dorian, Eb harmonic minor, Gb minor blues):
+  541,908 names, byte-identical. The same rig against the *previous* Pro
+  reports 1,231 differences, so it can see one.
 - **The four naming changes from the Scaler comparison** (dim9, two-note chords
   named by their third, the minor sixth against the half-diminished, and a
   third beating a shape with none): 82,478 voicings in six keys, **every
