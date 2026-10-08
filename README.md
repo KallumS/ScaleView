@@ -45,10 +45,13 @@ The **bass is found separately** from the root, so inversions read as slash
 chords: B C# F# is `Bsus2` with B underneath but `F#sus4` with F# underneath,
 and A C E G is `Amin7` or `C6` depending which is lowest. Where two readings
 fit, the one holding a complete triad - a real third with a perfect fifth -
-wins, and the odd notes hang off it.
+wins, and the odd notes hang off it. A dominant seventh standing on its own
+root takes its alterations whatever its fifth is doing, so the altered
+dominants read as themselves: `C7b5#9`, `C7b5b9`, and `Caug7b9` for C7#5b9.
 
 The selected scale only breaks a draw: at equal cost a root that is a scale
-degree wins, then a reading whose notes sit in the scale. A chord from outside
+degree wins, then a reading whose notes sit in the scale, then a reading that
+needs no slash - C D G Bb over C is `C7sus2`, not `GminAdd11/C`. A chord from outside
 the key is still named for what it is, never filtered out. With no scale
 selected the naming quietly assumes C major, so it never goes silent - nothing
 lights up and no label names a key, and choosing C Major explicitly gives
