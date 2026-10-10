@@ -106,6 +106,16 @@ case, run both, `diff`:
   (C, Gb, F#, Cb major, A minor, D Dorian, Eb harmonic minor, Gb minor blues):
   541,908 names, byte-identical. The same rig against the *previous* Pro
   reports 1,231 differences, so it can see one.
+- **October 2026: Starting Blocks decides which roots a chord can have**
+  (Pro's `df4ea43`, its decision 0011): where the notes are a Starting
+  Blocks chord - one of its 78 chord types on any root, any of its notes in
+  the bass, or one of the key's own chords on its degrees - the name is on
+  one of Blocks' roots, the cost choosing between them. `Key` now carries
+  the selected root and scale (`rootPitchClass`, `scaleIndex`) for the key's
+  chords. Diffed against Pro over every one- to seven-note voicing in no key
+  and eight keys, plus the music21 core corpus's 37,106 distinct sonorities
+  in no key and seven keys: 457,336 names, byte-identical; the previous Pro
+  differs on 1,076 of the voicings.
 - **The four naming changes from the Scaler comparison** (dim9, two-note chords
   named by their third, the minor sixth against the half-diminished, and a
   third beating a shape with none): 82,478 voicings in six keys, **every
