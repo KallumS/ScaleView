@@ -40,11 +40,14 @@ jobs:
 
       # The trap in CLAUDE.md: JUCE must have picked MusicEffect ('aumf') for
       # the AU, or Logic and other AU hosts never send it MIDI.
+      # The plugin's own Defs.txt: the test program writes one too, without any
+      # AU settings, so "the first Defs.txt found" is the wrong file.
       - name: The AU is a music effect
         run: |
-          defs=$(find build -name Defs.txt | head -1)
-          grep JucePlugin_AUMainType "$defs"
-          grep -q "JucePlugin_AUMainType=.*aumf" "$defs"
+          defs=$(find build/ScaleView_artefacts -path "*JuceLibraryCode*" -name Defs.txt | head -1)
+          echo "$defs"
+          grep -o "JucePlugin_AUMainType=[^;]*" "$defs"
+          grep -q "JucePlugin_AUMainType='aumf'" "$defs"
 
       - name: Sign and package
         run: |
