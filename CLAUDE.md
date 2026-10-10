@@ -34,6 +34,13 @@ ctest --test-dir build --output-on-failure
 - Linux builds VST3, CLAP and Standalone, which is enough to verify everything
   but the AU. The AU can only be built on macOS with Xcode, and nothing here
   can sign anything.
+- **The Mac plugins are built on CI** (`.github/workflows/build.yml`, from
+  October 2026): every push builds the VST3, AU and CLAP universal on
+  `macos-14`, runs both test binaries, checks the AU's main type is `'aumf'`,
+  ad-hoc signs each bundle, runs Apple's `auval` on the AU, and uploads
+  `ScaleView-macOS.zip` with `docs/INSTALL-MAC.txt` inside. A `v*` tag also
+  makes a Release. After pushing, check the run (GitHub MCP `actions_list` /
+  `get_job_logs`). The user tests on an M1 Mac in REAPER.
 
 ## Traps, each of which cost time or nearly shipped broken
 

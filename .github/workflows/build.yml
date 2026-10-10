@@ -1,0 +1,83 @@
+# Builds ScaleView for macOS - the VST3, the AU and the CLAP, universal
+# (Apple silicon and Intel) - and runs every test on the way. The plugins are
+# in the run's Artifacts as ScaleView-macOS, with a read-me on installing.
+#
+# Pushing a tag that starts with "v" (v1.0.1) also publishes a GitHub Release
+# with the zip attached, which is the easiest place to download it from.
+
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: macOS plugins
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ninja
+        run: brew install ninja
+
+      # CMakeLists.txt already asks for a universal binary (arm64 and x86_64)
+      # and macOS 10.13 or later, so nothing is overridden here.
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --target ScaleView_VST3 ScaleView_AU ScaleView_CLAP ScaleViewTests ScaleViewProcessorTests
+
+      - name: Tests
+        run: ctest --test-dir build --output-on-failure
+
+      # The trap in CLAUDE.md: JUCE must have picked MusicEffect ('aumf') for
+      # the AU, or Logic and other AU hosts never send it MIDI.
+      - name: The AU is a music effect
+        run: |
+          defs=$(find build -name Defs.txt | head -1)
+          grep JucePlugin_AUMainType "$defs"
+          grep -q "JucePlugin_AUMainType=.*aumf" "$defs"
+
+      - name: Sign and package
+        run: |
+          OUT=build/ScaleView_artefacts/Release
+          mkdir -p pkg
+          cp -R "$OUT/VST3/ScaleView.vst3" "$OUT/AU/ScaleView.component" "$OUT/CLAP/ScaleView.clap" pkg/
+          for p in pkg/ScaleView.vst3 pkg/ScaleView.component pkg/ScaleView.clap; do
+            # An ad-hoc signature: enough for an Apple silicon Mac to load it.
+            # There is no Apple Developer ID yet, so it is not notarised.
+            codesign --force --deep --sign - "$p"
+            codesign --verify --deep --strict "$p"
+            lipo -info "$p/Contents/MacOS/"*
+          done
+          cp docs/INSTALL-MAC.txt "pkg/Read me first.txt"
+          (cd pkg && ditto -c -k --sequesterRsrc . ../ScaleView-macOS.zip)
+
+      # Apple's own AU validator, the same check Logic runs before it will
+      # list a plugin. It needs the component installed where hosts look.
+      - name: Validate the AU (auval)
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R pkg/ScaleView.component ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+          auval -a | grep -i scaleview || true
+          auval -v aumf Scvw Klms
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ScaleView-macOS
+          path: ScaleView-macOS.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ScaleView-macOS.zip
