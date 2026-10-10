@@ -49,6 +49,12 @@ wins, and the odd notes hang off it. A dominant seventh standing on its own
 root takes its alterations whatever its fifth is doing, so the altered
 dominants read as themselves: `C7b5#9`, `C7b5b9`, and `Caug7b9` for C7#5b9.
 
+Where the notes are a chord Starting Blocks builds - any of its 78 chord
+types on any root, in any inversion, or one of the key's own chords on its
+degrees - the name is on a root Blocks builds them on: Blocks has the correct
+chord construction, so it is the dictionary. C Eb Gb B is `CminMaj7b5`, C D
+F G is `Dmin7(11)/C`, and C E G A over C is still `C6`.
+
 The selected scale only breaks a draw: at equal cost a root that is a scale
 degree wins, then a reading whose notes sit in the scale, then a reading that
 needs no slash - C D G Bb over C is `C7sus2`, not `GminAdd11/C`. A chord from outside
