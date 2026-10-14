@@ -238,6 +238,12 @@ Two other findings from it are worth keeping:
   288 of them now that Simple offers Pro's eighteen roots. An earlier version
   of this file credited that sweep to the Pro suite, which never had it - worth
   knowing before deleting anything on the strength of a claim written here.
+- **Menu words follow Apple's writing guidelines** (decision 0012, after
+  Noterator's 0053): title-style menu items with a verb first where they act
+  ("Choose a Random Scale"), `…` only on an item that asks for more, the
+  label's messages in sentence case. Change a word in Pro first, then copy it
+  to Simple and to the plugin's menus. Scale, root and colour names, chord
+  symbols and ExtState keys are not menu prose and stay as they are.
 
 ### Lessons learned
 
