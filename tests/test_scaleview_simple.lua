@@ -655,5 +655,114 @@ do
   end
 end
 
+-- Apple's HIG Foundations (decision 0013): every letter 7:1 on what it sits
+-- on, none under 10 points, and both menus reachable from the keyboard.
+do
+  local function lin(c) return c <= 0.03928 and c / 12.92 or ((c + 0.055) / 1.055) ^ 2.4 end
+  local function lum(c) return 0.2126 * lin(c[1]) + 0.7152 * lin(c[2]) + 0.0722 * lin(c[3]) end
+  local function ratio(a, b)
+    local x, y = lum(a), lum(b)
+    if x < y then x, y = y, x end
+    return (x + 0.05) / (y + 0.05)
+  end
+  local BG = {0.1375, 0.1532, 0.1806}
+
+  local seq, sizes = {}, {}
+  local circle, drawstr, setfont = gfx.circle, gfx.drawstr, gfx.setfont
+  gfx.circle = function(x, y, r, fill, aa)
+    if fill then seq[#seq + 1] = {fill = gfx._color} end
+    return circle(x, y, r, fill, aa)
+  end
+  gfx.drawstr = function(s)
+    seq[#seq + 1] = {text = s, color = gfx._color}
+    return drawstr(s)
+  end
+  gfx.setfont = function(i, face, size)
+    if size then sizes[#sizes + 1] = size end
+    return setfont(i, face, size)
+  end
+
+  chooseScale("C Major")
+  local function sweep(what)
+    local low, names = {}, 0
+    seq, sizes = {}, {}
+    gfx.w = gfx.w + 1
+    frame()
+    local under = BG
+    for _, e in ipairs(seq) do
+      if e.fill then under = e.fill
+      else
+        local onCircle = under ~= BG
+        if onCircle then names = names + 1 end
+        local r = ratio(e.color, onCircle and under or BG)
+        if r < 7 then low[#low + 1] = string.format("%s %.1f:1", e.text, r) end
+        under = BG
+      end
+    end
+    if #low > 0 then fail(what .. ": text under 7:1: " .. table.concat(low, ", ")) end
+    return names
+  end
+  local names = sweep("default highlight")
+  if names < 12 then fail("the contrast sweep should read twelve note names, read " .. names) end
+  for _, colour in ipairs({"Teal", "Orange", "Light Green", "Light Blue", "Light Pink", "White"}) do
+    chooseOption(colour)
+    sweep(colour)
+  end
+  print("every note name and label is 7:1 or more, with every highlight")
+
+  -- Never under 10 points, at the default size or squeezed into a small dock;
+  -- a circle too small for that shows no name rather than an unreadable one.
+  local small = {}
+  for _, size in ipairs({{200, 100}, {150, 75}, {120, 60}, {90, 45}}) do
+    gfx.w, gfx.h = size[1], size[2]
+    sizes = {}
+    frame()
+    for _, s in ipairs(sizes) do
+      if s < 10 then small[#small + 1] = size[1] .. "x" .. size[2] .. ": " .. s end
+    end
+  end
+  gfx.w, gfx.h = 200, 100
+  if #small > 0 then fail("text under 10 points: " .. table.concat(small, ", ")) end
+  seq = {}
+  gfx.w, gfx.h = 150, 75
+  frame()
+  local tiny = 0
+  for _, e in ipairs(seq) do if e.text and #e.text <= 3 and e.text:match("^[A-G]") then tiny = tiny + 1 end end
+  gfx.w, gfx.h = 200, 100
+  frame()
+  if tiny > 0 then fail("a 150x75 icon's circles are too small for a 10-point name, yet " .. tiny .. " were drawn") end
+  print("no text under 10 points; a tiny icon drops the names")
+
+  gfx.circle, gfx.drawstr, gfx.setfont = circle, drawstr, setfont
+
+  -- S or Return opens the scale list, O the options, inside the window.
+  local getchar, showmenu = gfx.getchar, gfx.showmenu
+  local at
+  gfx.showmenu = function(str)
+    at = {gfx.x, gfx.y}
+    return showmenu(str)
+  end
+  for _, k in ipairs({{115, "scale"}, {83, "scale"}, {13, "scale"}, {111, "options"}, {79, "options"}}) do
+    settleMouse()
+    gfx.mouse_x, gfx.mouse_y = -500, -500
+    local sent = false
+    gfx.getchar = function()
+      if sent then return 0 end
+      sent = true
+      return k[1]
+    end
+    menuOpened, at = nil, nil
+    frame()
+    if menuOpened ~= k[2] then
+      fail(string.format("key %d should open the %s menu, opened %s", k[1], k[2], tostring(menuOpened)))
+    elseif not (at and at[1] >= 0 and at[1] <= gfx.w and at[2] >= 0 and at[2] <= gfx.h) then
+      fail(string.format("a menu from key %d should open inside the window", k[1]))
+    end
+  end
+  gfx.getchar, gfx.showmenu = getchar, showmenu
+  settleMouse()
+  print("S and Return open the scale list, O the options")
+end
+
 if failures > 0 then print(failures .. " FAILURE(S)") os.exit(1) end
 print("PASS")

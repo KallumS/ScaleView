@@ -27,9 +27,10 @@
  *                 Click a circle for the scale list, click anywhere else for
  *                 a random scale and display options. Either mouse button
  *                 does the same thing.
- *                 Press D to dock/undock, Esc or the window close box to exit.
+ *                 Press S or Return for the scale list, O for the options,
+ *                 D to dock/undock, Esc or the window close box to exit.
  * Author:         kallums
- * Version:        1.0.4
+ * Version:        1.1.0
  * Provides:       [main] .
 --]]
 
@@ -46,14 +47,16 @@ local EXT_SECTION  = "ScaleViewPro"
 -- already been migrated into the key below.
 local EXT_LEGACY   = {"kallums_ScaleViewAlt2"}
 
+local MIN_TEXT        = 10   -- points: Apple's smallest text on the Mac (decision 0013)
+local MIN_NAME_RADIUS = 9    -- a circle this small still holds "Bbb" at MIN_TEXT
 local DEFAULT_W    = 200
 local DEFAULT_H    = 100
 
 -- Colours are 0..1 RGB triplets, tweak to taste.
 local COLOR_BG        = {0.1375, 0.1532, 0.1806}  -- icon background, #23272e
-local COLOR_OFF       = {0.30, 0.31, 0.35}  -- note not in the selected scale
+local COLOR_OFF       = {0.2275, 0.2510, 0.2902}  -- note not in the selected scale, #3A404A
 local COLOR_LABEL     = {0.7492, 0.7727, 0.8080}  -- scale name text, #BFC5CE
-local COLOR_TEXT_OFF  = {0.62, 0.64, 0.70}  -- note name on an unlit circle
+local COLOR_TEXT_OFF  = {0.8667, 0.8824, 0.9059}  -- note name on an unlit circle, #DDE1E7: 8.0:1 (decision 0013)
 local COLOR_TEXT_ON   = {0.0786, 0.0904, 0.1100}  -- note name on a lit circle, #14171c
 local COLOR_HELD      = {1.00, 0.9492, 0.0000}  -- ring around a played note, always, #FFF200
 local COLOR_CHORD     = {0.9492, 0.9570, 0.9688}  -- chord name, brighter than a scale name, #F2F4F7
@@ -1330,11 +1333,12 @@ local function drawCircle(x, y, r, pc)
   setColor(fill)
   gfx.circle(x, y, r, true, true)
 
-  if state.showNames and r >= 7 then
+  if state.showNames and r >= MIN_NAME_RADIUS then
     local name = noteName(pc)
-    -- "Bbb" needs to fit the same circle as "B".
+    -- "Bbb" needs to fit the same circle as "B". Never under MIN_TEXT points,
+    -- Apple's smallest for the Mac: a circle too small for that shows no name.
     local fit = ({0.95, 0.80, 0.62})[#name] or 0.55
-    gfx.setfont(2, "Arial", math.max(7, math.floor(r * fit)))
+    gfx.setfont(2, "Arial", math.max(MIN_TEXT, math.floor(r * fit)))
     local tw, th = gfx.measurestr(name)
     setColor(on and COLOR_TEXT_ON or COLOR_TEXT_OFF)
     gfx.x, gfx.y = x - tw / 2, y - th / 2
@@ -1362,7 +1366,7 @@ local function draw()
 
   -- Current scale name.
   if L.labelH > 6 then
-    gfx.setfont(1, "Arial", math.max(9, math.floor(L.labelH * 0.62)))
+    gfx.setfont(1, "Arial", math.max(MIN_TEXT, math.floor(L.labelH * 0.62)))
     local text, isChord = displayLabel()
     local tw, th = gfx.measurestr(text)
     setColor(isChord and COLOR_CHORD or COLOR_LABEL)
@@ -1407,8 +1411,10 @@ local function addSubmenu(menu, label)
   addField(menu, ">" .. label)
 end
 
-local function showMenu(menu)
-  gfx.x, gfx.y = gfx.mouse_x, gfx.mouse_y
+-- atX, atY: where a menu opened from the keyboard appears, since the pointer
+-- may be anywhere. A click opens it under the pointer.
+local function showMenu(menu, atX, atY)
+  gfx.x, gfx.y = atX or gfx.mouse_x, atY or gfx.mouse_y
   local choice = gfx.showmenu(table.concat(menu.fields, "|"))
   local action = menu.actions[choice]
   if action then action() end
@@ -1445,7 +1451,7 @@ local function randomScale()
   selectScale(root, scale)
 end
 
-local function scaleMenu()
+local function scaleMenu(atX, atY)
   local menu = newMenu()
 
   addItem(menu, "Clear Scale", clearScale, {checked = state.scale == nil})
@@ -1463,7 +1469,7 @@ local function scaleMenu()
     end
   end
 
-  showMenu(menu)
+  showMenu(menu, atX, atY)
 end
 
 -- The dock state is a bitfield: bit 0 says whether the window is docked, and
@@ -1481,7 +1487,7 @@ local function toggleDock()
   needRedraw = true
 end
 
-local function optionsMenu()
+local function optionsMenu(atX, atY)
   local menu = newMenu()
 
   addItem(menu, "Choose a Random Scale", randomScale)
@@ -1515,7 +1521,7 @@ local function optionsMenu()
   addSeparator(menu)
   addItem(menu, "Close", function() gfx.quit() end)
 
-  showMenu(menu)
+  showMenu(menu, atX, atY)
 end
 
 ------------------------------------------------------------------------------
@@ -1576,10 +1582,20 @@ local function handleMouse()
 end
 
 -- Returns false when the script should stop.
+-- The keyboard reaches both menus too (decision 0013): S or Return opens the
+-- scale list, O the options, from the middle of the icon. Once open, a menu is
+-- the system's own, so the arrow keys and Return work in it.
 local function handleKeys()
   local char = gfx.getchar()
   if char < 0 or char == 27 then return false end        -- window closed / Esc
   if char == 100 or char == 68 then toggleDock() end     -- d / D
+  local L = layout()
+  local mx, my = L.originX + L.boxW / 2, L.labelY
+  if char == 115 or char == 83 or char == 13 then        -- s / S / Return
+    scaleMenu(mx, my)
+  elseif char == 111 or char == 79 then                  -- o / O
+    optionsMenu(mx, my)
+  end
   return true
 end
 

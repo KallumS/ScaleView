@@ -65,6 +65,8 @@ Copy whichever script you want (or both) anywhere, then in REAPER:
 | --- | --- |
 | Click a circle | Scale list - pick a root note under a scale type |
 | Click anywhere else | Display options - see below |
+| `S` or `Return` | Scale list, from the keyboard |
+| `O` | Display options, from the keyboard |
 | `D` | Dock / undock the window |
 | `Esc` or the close box | Quit |
 
@@ -137,7 +139,7 @@ The colours are 0..1 RGB triplets near the top of the script:
 
 ```lua
 local COLOR_BG       = {0.1375, 0.1532, 0.1806}  -- icon background, #23272e
-local COLOR_OFF      = {0.30, 0.31, 0.35}        -- note not in the scale
+local COLOR_OFF      = {0.2275, 0.2510, 0.2902}  -- note not in the scale, #3A404A
 local COLOR_TEXT_ON  = {0.0786, 0.0904, 0.1100}  -- note name on a lit circle, #14171c
 local COLOR_HELD     = {1.00, 0.9492, 0.0000}    -- ring around a played note, #FFF200
 ```
