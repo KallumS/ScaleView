@@ -20,6 +20,19 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     void mouseUp (const juce::MouseEvent&) override;
+    bool keyPressed (const juce::KeyPress&) override;
+    std::unique_ptr<juce::AccessibilityHandler> createAccessibilityHandler() override;
+
+    /*  Which menu a key opens (ScaleView for REAPER's decision 0013): S or
+        Return the scale list, O the options. A free function of the key, so
+        the tests can ask it without a desktop to open a menu on. */
+    enum class KeyMenu { none, scales, options };
+    static KeyMenu menuForKey (const juce::KeyPress&);
+
+    // Nothing under this many points (Apple's smallest on the Mac); a circle
+    // too small to hold a name at that size shows none.
+    static constexpr float minimumTextSize = 10.0f;
+    static constexpr float minimumNameRadius = 9.0f;
 
 private:
     void changeListenerCallback (juce::ChangeBroadcaster*) override
@@ -34,6 +47,7 @@ private:
     */
     void timerCallback() override;
     void refreshChord();
+    void updateAccessibleTitle();   // what VoiceOver reads: the key, or the chord
 
     void showScaleMenu();
     void showOptionsMenu();

@@ -204,10 +204,25 @@ and black rather than stored separately. The grey ramp's load-bearing property
 is **R < G < B** on every entry - a neutral grey reads flat beside the yellow,
 so a new grey has to be picked from the ramp, not mixed.
 
-`colourUnlit` (`#4D4F59`) and `colourNameUnlit` (`#9EA3B3`) are deliberately
-still off the scheme, pending a decision recorded in the ReaScript repo: the
-scheme's unchosen button is light with dark ink, which here would make the notes
-outside the key the brightest thing in the icon.
+`colourUnlit` and `colourNameUnlit` are a dark fill with light letters, where
+the scheme's unchosen button is light with dark ink; inverting them would make
+the notes outside the key the brightest thing in the icon, and that decision is
+still open in the ReaScript repo. Since October 2026 both are ramp entries,
+`#3A404A` and `#DDE1E7` (8.0:1; `#4D4F59` and `#9EA3B3` were 3.2:1), after
+ScaleView for REAPER's decision 0013.
+
+## Apple's HIG Foundations
+
+Ported from ScaleView for REAPER's decision 0013 (its `docs/apple-hig-review.md`
+is the review): every letter 7:1 on what it sits on; no text under
+`minimumTextSize` (10 points), so a circle under `minimumNameRadius` shows no
+name; **S** or **Return** opens the scale list and **O** the options
+(`menuForKey`, a static function so the tests need no desktop), the editor
+taking keyboard focus; and, which the ReaScripts cannot do, the editor is an
+`image` to accessibility whose title is "ScaleView: <key>, playing <chord>",
+so VoiceOver can read it. `TestProcessorMidi.cpp` checks each. Whether a host
+passes S, O and Return to a plugin window, and whether VoiceOver reaches into
+it, is the host's business and unverified.
 
 ## Environment
 

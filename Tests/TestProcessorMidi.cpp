@@ -9,6 +9,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "../Source/PluginProcessor.h"
+#include "../Source/PluginEditor.h"
 
 namespace
 {
@@ -197,6 +198,43 @@ int main()
 
         check (ringPixels > 100, "the editor draws rings around the held notes ("
                + juce::String (ringPixels) + " ring pixels)");
+
+        /*  Apple's HIG Foundations (ScaleView for REAPER's decision 0013).
+            C is outside Gb major, so its circle is unlit: #3A404A, under the
+            name's letters #DDE1E7 at 8.0:1. Sampled below the letter. */
+        {
+            const float step = 400.0f / 7.0f, radius = juce::jmin (step * 0.40f, 160.0f * 0.20f);
+            const auto pixel = image.getPixelAt ((int) (0.5f * step), (int) (160.0f * 0.76f + radius * 0.75f));
+            check (std::abs (pixel.getRed() - 58) <= 2 && std::abs (pixel.getGreen() - 64) <= 2
+                   && std::abs (pixel.getBlue() - 74) <= 2,
+                   "an unlit circle is #3A404A (got " + pixel.toDisplayString (false) + ")");
+        }
+
+        auto* view = dynamic_cast<ScaleViewEditor*> (editor.get());
+        check (view != nullptr, "the editor is ScaleView's");
+        if (view != nullptr)
+        {
+            using KM = ScaleViewEditor::KeyMenu;
+            check (ScaleViewEditor::menuForKey (juce::KeyPress ('s')) == KM::scales
+                   && ScaleViewEditor::menuForKey (juce::KeyPress ('S', juce::ModifierKeys::shiftModifier, 'S')) == KM::scales
+                   && ScaleViewEditor::menuForKey (juce::KeyPress (juce::KeyPress::returnKey)) == KM::scales,
+                   "S and Return open the scale list");
+            check (ScaleViewEditor::menuForKey (juce::KeyPress ('o')) == KM::options,
+                   "O opens the options");
+            check (ScaleViewEditor::menuForKey (juce::KeyPress ('x')) == KM::none
+                   && ScaleViewEditor::menuForKey (juce::KeyPress ('s', juce::ModifierKeys::commandModifier, 's')) == KM::none,
+                   "other keys, and Cmd+S, are left to the host");
+            check (view->getWantsKeyboardFocus(), "the editor takes keyboard focus");
+
+            check (view->getTitle().contains (processor.getKey().label)
+                   && view->getTitle().contains ("playing"),
+                   "VoiceOver reads the key and the chord: " + view->getTitle());
+            // JUCE hands out a component's handler only once it is on screen,
+            // so ask for the one the editor would give.
+            const auto handler = view->createAccessibilityHandler();
+            check (handler != nullptr && handler->getRole() == juce::AccessibilityRole::image,
+                   "the icon is an image to accessibility");
+        }
 
         if (auto* path = std::getenv ("SCALEVIEW_RENDER_TO"))
         {

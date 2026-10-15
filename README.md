@@ -28,6 +28,8 @@ reads chords; the musical core is the same, verified against it note for note.
 | --- | --- |
 | Left-click | Scale list - pick a root under a scale type |
 | Right-click | Choose a Random Scale, note names on/off, Simplify Note Names, highlight colour |
+| `S` or `Return` | Scale list, from the keyboard |
+| `O` | The right-click options, from the keyboard |
 | Play | The notes are ringed and the chord is named |
 
 ### Chord detection

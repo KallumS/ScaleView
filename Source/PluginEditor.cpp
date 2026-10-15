@@ -7,9 +7,9 @@ namespace
 constexpr float iconAspect = 2.0f;
 
 const juce::Colour colourBackground { 35, 39, 46 };
-const juce::Colour colourUnlit      { 77, 79, 89 };
+const juce::Colour colourUnlit      { 58, 64, 74 };     // #3A404A
 const juce::Colour colourLabel      { 191, 197, 206 };  // #BFC5CE
-const juce::Colour colourNameUnlit  { 158, 163, 179 };
+const juce::Colour colourNameUnlit  { 221, 225, 231 };  // #DDE1E7: 8.0:1 on colourUnlit
 const juce::Colour colourNameLit    { 20, 23, 28 };   // #14171c, on a lit circle
 const juce::Colour colourHeld       { 255, 242,   0 };   // #FFF200, ring around a played note, always
 const juce::Colour colourChord      { 242, 244, 247 };  // #F2F4F7, brighter than a scale name
@@ -43,6 +43,7 @@ ScaleViewEditor::ScaleViewEditor (ScaleViewProcessor& p)
     processor.addChangeListener (this);
 
     setResizable (true, true);
+    setWantsKeyboardFocus (true);
 
     if (auto* sizeConstrainer = getConstrainer())
     {
@@ -73,6 +74,28 @@ void ScaleViewEditor::refreshChord()
         heldClasses[static_cast<size_t> (note % 12)] = true;
 
     chordLabel = juce::String (scaleview::chordName (notes, processor.getKey()));
+    updateAccessibleTitle();
+}
+
+void ScaleViewEditor::updateAccessibleTitle()
+{
+    const auto key = processor.getKey();
+    auto title = juce::String ("ScaleView: ") + juce::String (key.label);
+    if (chordLabel.isNotEmpty())
+        title << ", playing " << chordLabel;
+
+    if (title == getTitle())
+        return;
+
+    setTitle (title);
+    if (auto* handler = getAccessibilityHandler())
+        handler->notifyAccessibilityEvent (juce::AccessibilityEvent::titleChanged);
+}
+
+std::unique_ptr<juce::AccessibilityHandler> ScaleViewEditor::createAccessibilityHandler()
+{
+    // The icon is a picture with a caption: VoiceOver reads the title.
+    return std::make_unique<juce::AccessibilityHandler> (*this, juce::AccessibilityRole::image);
 }
 
 void ScaleViewEditor::timerCallback()
@@ -130,7 +153,7 @@ void ScaleViewEditor::drawCircle (juce::Graphics& g, float centreX, float centre
                        (radius + 2.0f) * 2.0f, (radius + 2.0f) * 2.0f, 1.5f);
     }
 
-    if (! processor.getShowNoteNames() || radius < 7.0f)
+    if (! processor.getShowNoteNames() || radius < minimumNameRadius)
         return;
 
     const auto name = key.names[(size_t) pitchClass];
@@ -138,7 +161,7 @@ void ScaleViewEditor::drawCircle (juce::Graphics& g, float centreX, float centre
     // "Bbb" has to fit the same circle as "B".
     const float fit = name.length() >= 3 ? 0.62f : (name.length() == 2 ? 0.80f : 0.95f);
 
-    g.setFont (juce::Font (juce::FontOptions (juce::jmax (7.0f, radius * fit))));
+    g.setFont (juce::Font (juce::FontOptions (juce::jmax (minimumTextSize, radius * fit))));
     g.setColour (lit ? colourNameLit : colourNameUnlit);
     g.drawText (name, juce::Rectangle<float> (centreX - radius, centreY - radius,
                                               radius * 2.0f, radius * 2.0f),
@@ -167,7 +190,7 @@ void ScaleViewEditor::paint (juce::Graphics& g)
     {
         const auto showingChord = chordLabel.isNotEmpty();
 
-        g.setFont (juce::Font (juce::FontOptions (juce::jmax (9.0f, layout.labelHeight * 0.62f))));
+        g.setFont (juce::Font (juce::FontOptions (juce::jmax (minimumTextSize, layout.labelHeight * 0.62f))));
         g.setColour (showingChord ? colourChord : colourLabel);
         g.drawText (showingChord ? chordLabel : juce::String (key.label),
                     juce::Rectangle<float> (layout.originX, layout.labelY,
@@ -188,6 +211,34 @@ void ScaleViewEditor::mouseUp (const juce::MouseEvent& event)
         showOptionsMenu();
     else
         showScaleMenu();
+}
+
+ScaleViewEditor::KeyMenu ScaleViewEditor::menuForKey (const juce::KeyPress& key)
+{
+    if (key.getModifiers().isCommandDown() || key.getModifiers().isCtrlDown()
+        || key.getModifiers().isAltDown())
+        return KeyMenu::none;
+
+    // A letter's key code is its capital; the text character may be absent.
+    const auto typed = key.getTextCharacter() != 0 ? key.getTextCharacter()
+                                                   : (juce::juce_wchar) key.getKeyCode();
+    const auto c = juce::CharacterFunctions::toLowerCase (typed);
+    if (c == 's' || key.getKeyCode() == juce::KeyPress::returnKey)
+        return KeyMenu::scales;
+    if (c == 'o')
+        return KeyMenu::options;
+    return KeyMenu::none;
+}
+
+bool ScaleViewEditor::keyPressed (const juce::KeyPress& key)
+{
+    switch (menuForKey (key))
+    {
+        case KeyMenu::scales:  showScaleMenu();   return true;
+        case KeyMenu::options: showOptionsMenu(); return true;
+        case KeyMenu::none:    break;
+    }
+    return false;   // let the host have it
 }
 
 void ScaleViewEditor::showScaleMenu()
