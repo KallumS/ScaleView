@@ -29,6 +29,10 @@
         <changelog><![CDATA[ScaleView Pro. A 200x100 icon showing the twelve pitch classes as circles, with the notes of the selected scale lit, the notes you play ringed, and the chord you are holding named underneath. The chord is read rather than looked up, so extended and thin voicings are named instead of being read out as notes. Note names are spelled for the key - Gb major reads Gb Ab Bb Cb Db Eb F - with a Simplify Note Names option for piano-key naming. 18 spelled roots against 16 scale types. The scale is remembered per project, and a toolbar button lights up while the script runs.]]></changelog>
         <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/08cc599ae35c970835b6d8eb7a727c94d47c5ccf/reascripts/ScaleView%20Pro.lua</source>
       </version>
+      <version name="1.0.4" author="kallums" time="2026-10-14T12:00:00Z">
+        <changelog><![CDATA[Wording in the menus follows Apple's writing guidelines: "Random Scale" is now "Choose a Random Scale". Also the first release of everything since 1.0.3: the house colours (a darker background, a yellow ring round a played note, White in place of Gold among the highlights); a played note always lights up straight away; a doubled root of the key reads as root position (E G C C is C, not C/E); altered dominants keep their root (C7#5b9 reads Caug7b9); a draw goes to the name without a slash (C D G Bb is C7sus2); Starting Blocks' chords decide which roots a chord can have; and no MIDI is dropped however busy the input.]]></changelog>
+        <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/8275e3045680eda4e8fb0cf6f2175b6d0f4f5e2b/reascripts/ScaleView%20Pro.lua</source>
+      </version>
       <metadata>
         <description><![CDATA[{\pard ScaleView Pro\par
 A 200x100 icon showing the twelve pitch classes as circles - five black keys over seven white - with the notes of the selected scale lit, the notes you play ringed, and the chord you are holding named underneath.\par
@@ -41,6 +45,10 @@ Click a circle for the scale list, click anywhere else for display options. Eith
       <version name="1.0.3" author="kallums" time="2026-09-13T18:42:00Z">
         <changelog><![CDATA[ScaleView Simple. A 200x100 icon showing the twelve pitch classes as circles, with the notes of the selected scale lit. ScaleView Pro without the chord detection: it does not read MIDI at all and never names a chord. The icon, the scales, the key-aware spelling, Simplify Note Names, the menus, the colours, the per-project scale and the toolbar toggle all behave exactly as they do in Pro.]]></changelog>
         <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/08cc599ae35c970835b6d8eb7a727c94d47c5ccf/reascripts/ScaleView%20Simple.lua</source>
+      </version>
+      <version name="1.0.4" author="kallums" time="2026-10-14T12:00:00Z">
+        <changelog><![CDATA[Wording in the menus follows Apple's writing guidelines: "Random Scale" is now "Choose a Random Scale". Also the first release of the house colours since 1.0.3: a darker background, dark note names on lit circles, and White in place of Gold among the highlights.]]></changelog>
+        <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/8275e3045680eda4e8fb0cf6f2175b6d0f4f5e2b/reascripts/ScaleView%20Simple.lua</source>
       </version>
       <metadata>
         <description><![CDATA[{\pard ScaleView Simple\par
