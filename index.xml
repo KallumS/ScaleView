@@ -33,6 +33,10 @@
         <changelog><![CDATA[Wording in the menus follows Apple's writing guidelines: "Random Scale" is now "Choose a Random Scale". Also the first release of everything since 1.0.3: the house colours (a darker background, a yellow ring round a played note, White in place of Gold among the highlights); a played note always lights up straight away; a doubled root of the key reads as root position (E G C C is C, not C/E); altered dominants keep their root (C7#5b9 reads Caug7b9); a draw goes to the name without a slash (C D G Bb is C7sus2); Starting Blocks' chords decide which roots a chord can have; and no MIDI is dropped however busy the input.]]></changelog>
         <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/8275e3045680eda4e8fb0cf6f2175b6d0f4f5e2b/reascripts/ScaleView%20Pro.lua</source>
       </version>
+      <version name="1.1.0" author="kallums" time="2026-10-15T18:00:00Z">
+        <changelog><![CDATA[Easier to read and reachable from the keyboard, after Apple's design guidelines: note names on circles outside the key are now light on a darker circle (8:1 contrast, was 3:1); no text is smaller than 10 points, so a very small icon shows the circles without names; S or Return opens the scale list and O the options.]]></changelog>
+        <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/bf05472e23082720328ffd4230f39012f25212a1/reascripts/ScaleView%20Pro.lua</source>
+      </version>
       <metadata>
         <description><![CDATA[{\pard ScaleView Pro\par
 A 200x100 icon showing the twelve pitch classes as circles - five black keys over seven white - with the notes of the selected scale lit, the notes you play ringed, and the chord you are holding named underneath.\par
@@ -49,6 +53,10 @@ Click a circle for the scale list, click anywhere else for display options. Eith
       <version name="1.0.4" author="kallums" time="2026-10-14T12:00:00Z">
         <changelog><![CDATA[Wording in the menus follows Apple's writing guidelines: "Random Scale" is now "Choose a Random Scale". Also the first release of the house colours since 1.0.3: a darker background, dark note names on lit circles, and White in place of Gold among the highlights.]]></changelog>
         <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/8275e3045680eda4e8fb0cf6f2175b6d0f4f5e2b/reascripts/ScaleView%20Simple.lua</source>
+      </version>
+      <version name="1.1.0" author="kallums" time="2026-10-15T18:00:00Z">
+        <changelog><![CDATA[Easier to read and reachable from the keyboard, after Apple's design guidelines: note names on circles outside the key are now light on a darker circle (8:1 contrast, was 3:1); no text is smaller than 10 points, so a very small icon shows the circles without names; S or Return opens the scale list and O the options.]]></changelog>
+        <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/bf05472e23082720328ffd4230f39012f25212a1/reascripts/ScaleView%20Simple.lua</source>
       </version>
       <metadata>
         <description><![CDATA[{\pard ScaleView Simple\par
