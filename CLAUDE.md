@@ -65,6 +65,12 @@ ctest --test-dir build --output-on-failure
   round trip.
 - The editor keeps a fixed 2:1 aspect through its constrainer, and centres the
   icon in whatever space the host gives it.
+- **Menu words are ScaleView Pro's**, which follow Apple's writing guidelines
+  (ScaleView for REAPER's decision 0012, after Noterator's 0053): title-style
+  items, a verb first where they act ("Clear Scale", "Choose a Random Scale",
+  "Show Note Names"). Change a word in Pro first, then here. Text beyond ASCII
+  goes through `juce::String::fromUTF8`. Scale, root and colour names and the
+  chord symbols are not menu prose and stay as they are.
 
 ## Parity with the ReaScript
 

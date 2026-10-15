@@ -193,7 +193,7 @@ void ScaleViewEditor::mouseUp (const juce::MouseEvent& event)
 void ScaleViewEditor::showScaleMenu()
 {
     juce::PopupMenu menu;
-    menu.addItem (clearScaleId, "Clear scale", true, processor.getScaleIndex() < 0);
+    menu.addItem (clearScaleId, "Clear Scale", true, processor.getScaleIndex() < 0);
     menu.addSeparator();
 
     for (size_t scaleIndex = 0; scaleIndex < scaleview::scales.size(); ++scaleIndex)
@@ -228,9 +228,9 @@ void ScaleViewEditor::showScaleMenu()
 void ScaleViewEditor::showOptionsMenu()
 {
     juce::PopupMenu menu;
-    menu.addItem (randomScaleId, "Random Scale");
+    menu.addItem (randomScaleId, "Choose a Random Scale");
     menu.addSeparator();
-    menu.addItem (showNoteNamesId, "Show note names", true, processor.getShowNoteNames());
+    menu.addItem (showNoteNamesId, "Show Note Names", true, processor.getShowNoteNames());
     menu.addItem (simpleNamesId, "Simplify Note Names", true, processor.getSimpleNames());
 
     juce::PopupMenu colours;

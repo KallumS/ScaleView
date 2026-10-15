@@ -27,7 +27,7 @@ reads chords; the musical core is the same, verified against it note for note.
 | Action | Result |
 | --- | --- |
 | Left-click | Scale list - pick a root under a scale type |
-| Right-click | Random Scale, note names on/off, Simplify Note Names, highlight colour |
+| Right-click | Choose a Random Scale, note names on/off, Simplify Note Names, highlight colour |
 | Play | The notes are ringed and the chord is named |
 
 ### Chord detection
@@ -214,7 +214,7 @@ plugin and run by the same `ctest`.
 
 - **No docking.** The host owns the plugin window. It is resizable instead and
   keeps its proportions.
-- **Random Scale** is seeded from the system random source rather than
+- **Choose a Random Scale** is seeded from the system random source rather than
   REAPER's clock.
 - **It sees more MIDI than the script does.** The ReaScript reads REAPER's
   global input history, which carries live playing only; the plugin sees
