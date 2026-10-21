@@ -224,6 +224,16 @@ so VoiceOver can read it. `TestProcessorMidi.cpp` checks each. Whether a host
 passes S, O and Return to a plugin window, and whether VoiceOver reaches into
 it, is the host's business and unverified.
 
+**The final sweep** (21 October 2026, version 1.1.0, `docs/apple-hig-review.md`):
+an unlit circle has a `#6D7581` rim (`colourEdge`, 3.2:1 on the background),
+drawn as a filled circle under the fill so the only stroke is still the
+played-note ring; the face is `pickFace(installed, systemFaces())` - Segoe UI
+on Windows, JUCE's default elsewhere, because the Mac's San Francisco cannot
+be named safely through `Font`; the menus, being JUCE's drawing, take
+`MenuLook` - `#2A2F37` with a `#3A404A` edge, no stripes, words 7:1. New
+code: every `Font` through `textFont()`, every text colour 7:1, every shape
+that means something 3:1 on what it sits on.
+
 ## Environment
 
 - `raw.githubusercontent.com` is reachable, so JUCE, CLAP, the VST3 SDK and

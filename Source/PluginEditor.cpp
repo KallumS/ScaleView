@@ -8,11 +8,14 @@ constexpr float iconAspect = 2.0f;
 
 const juce::Colour colourBackground { 35, 39, 46 };
 const juce::Colour colourUnlit      { 58, 64, 74 };     // #3A404A
+const juce::Colour colourEdge       { 109, 117, 129 };  // #6D7581: rim of an unlit circle, 3.2:1 on the background
 const juce::Colour colourLabel      { 191, 197, 206 };  // #BFC5CE
 const juce::Colour colourNameUnlit  { 221, 225, 231 };  // #DDE1E7: 8.0:1 on colourUnlit
 const juce::Colour colourNameLit    { 20, 23, 28 };   // #14171c, on a lit circle
 const juce::Colour colourHeld       { 255, 242,   0 };   // #FFF200, ring around a played note, always
 const juce::Colour colourChord      { 242, 244, 247 };  // #F2F4F7, brighter than a scale name
+const juce::Colour colourMenu       { 42, 47, 55 };     // #2A2F37, a menu: a step lighter than the icon
+const juce::Colour colourMenuEdge   { 58, 64, 74 };     // #3A404A, its edge, and the item under the pointer
 
 juce::Colour highlightColour (int index)
 {
@@ -38,8 +41,12 @@ enum MenuIds
 
 //==============================================================================
 ScaleViewEditor::ScaleViewEditor (ScaleViewProcessor& p)
-    : AudioProcessorEditor (&p), processor (p)
+    : AudioProcessorEditor (&p), processor (p),
+      face (systemFaces().isEmpty() ? juce::String()
+                                    : pickFace (juce::Font::findAllTypefaceNames(), systemFaces()))
 {
+    menuLook.face = face;
+    setLookAndFeel (&menuLook);   // the menus take it from their target, this editor
     processor.addChangeListener (this);
 
     setResizable (true, true);
@@ -62,6 +69,7 @@ ScaleViewEditor::~ScaleViewEditor()
 {
     stopTimer();
     processor.removeChangeListener (this);
+    setLookAndFeel (nullptr);
 }
 
 //==============================================================================
@@ -133,14 +141,86 @@ ScaleViewEditor::Layout ScaleViewEditor::getLayout() const
              boxWidth };
 }
 
+//==============================================================================
+ScaleViewEditor::MenuLook::MenuLook()
+{
+    using PM = juce::PopupMenu;
+    setColour (PM::backgroundColourId,            colourMenu);
+    setColour (PM::textColourId,                  colourNameUnlit);  // #DDE1E7, 10.2:1
+    setColour (PM::headerTextColourId,            colourLabel);      // #BFC5CE, 7.7:1
+    setColour (PM::highlightedBackgroundColourId, colourMenuEdge);
+    setColour (PM::highlightedTextColourId,       colourChord);      // #F2F4F7, 9.4:1
+}
+
+void ScaleViewEditor::MenuLook::drawPopupMenuBackgroundWithOptions (juce::Graphics& g,
+                                                                    int width, int height,
+                                                                    const juce::PopupMenu::Options&)
+{
+    g.fillAll (findColour (juce::PopupMenu::backgroundColourId));
+    g.setColour (colourMenuEdge);
+    g.drawRect (0, 0, width, height);
+}
+
+juce::Font ScaleViewEditor::MenuLook::getPopupMenuFont()
+{
+    auto font = LookAndFeel_V4::getPopupMenuFont();
+    if (face.isNotEmpty())
+        font.setTypefaceName (face);
+    return font;
+}
+
+juce::StringArray ScaleViewEditor::systemFaces()
+{
+   #if JUCE_WINDOWS
+    return { "Segoe UI" };   // Windows' own interface face since Vista
+   #else
+    /*  Not on a Mac: San Francisco is hidden from lookup by name, and asking
+        CoreText for ".AppleSystemUIFont" or ".SFNS..." by name gets Times
+        Roman on recent macOS, with a console note to use the system-font
+        APIs instead - which JUCE's Font does not expose. So the Mac keeps
+        JUCE's default sans-serif (Helvetica), as does Linux. */
+    return {};
+   #endif
+}
+
+juce::String ScaleViewEditor::pickFace (const juce::StringArray& installed,
+                                        const juce::StringArray& wanted)
+{
+    for (const auto& face : wanted)
+        if (installed.contains (face, true))
+            return face;
+
+    return {};   // JUCE's default sans-serif
+}
+
+juce::Font ScaleViewEditor::textFont (float height) const
+{
+    return face.isEmpty() ? juce::Font (juce::FontOptions (height))
+                          : juce::Font (juce::FontOptions (face, height, juce::Font::plain));
+}
+
 void ScaleViewEditor::drawCircle (juce::Graphics& g, float centreX, float centreY,
                                   float radius, int pitchClass, const scaleview::Key& key,
                                   juce::Colour highlight) const
 {
     const bool lit = key.lit[(size_t) pitchClass];
 
+    auto inner = radius;
+    if (! lit)
+    {
+        /*  A dark circle on the dark background is 1.4:1, too faint to show
+            where the note sits (Apple's 3:1 for a shape that means something).
+            A rim of colourEdge, 3.2:1, shows it and the fill stays dark, so
+            the notes outside the key still recede. Drawn as a filled circle
+            under the fill, so the only stroke is still the played-note ring.
+            As ScaleView Pro does (its decision 0013, final sweep). */
+        g.setColour (colourEdge);
+        g.fillEllipse (centreX - radius, centreY - radius, radius * 2.0f, radius * 2.0f);
+        inner = radius - juce::jmax (1.0f, radius / 12.0f);
+    }
+
     g.setColour (lit ? highlight : colourUnlit);
-    g.fillEllipse (centreX - radius, centreY - radius, radius * 2.0f, radius * 2.0f);
+    g.fillEllipse (centreX - inner, centreY - inner, inner * 2.0f, inner * 2.0f);
 
     if (heldClasses[static_cast<size_t> (pitchClass)])
     {
@@ -161,7 +241,7 @@ void ScaleViewEditor::drawCircle (juce::Graphics& g, float centreX, float centre
     // "Bbb" has to fit the same circle as "B".
     const float fit = name.length() >= 3 ? 0.62f : (name.length() == 2 ? 0.80f : 0.95f);
 
-    g.setFont (juce::Font (juce::FontOptions (juce::jmax (minimumTextSize, radius * fit))));
+    g.setFont (textFont (juce::jmax (minimumTextSize, radius * fit)));
     g.setColour (lit ? colourNameLit : colourNameUnlit);
     g.drawText (name, juce::Rectangle<float> (centreX - radius, centreY - radius,
                                               radius * 2.0f, radius * 2.0f),
@@ -190,7 +270,7 @@ void ScaleViewEditor::paint (juce::Graphics& g)
     {
         const auto showingChord = chordLabel.isNotEmpty();
 
-        g.setFont (juce::Font (juce::FontOptions (juce::jmax (minimumTextSize, layout.labelHeight * 0.62f))));
+        g.setFont (textFont (juce::jmax (minimumTextSize, layout.labelHeight * 0.62f)));
         g.setColour (showingChord ? colourChord : colourLabel);
         g.drawText (showingChord ? chordLabel : juce::String (key.label),
                     juce::Rectangle<float> (layout.originX, layout.labelY,

@@ -34,6 +34,27 @@ public:
     static constexpr float minimumTextSize = 10.0f;
     static constexpr float minimumNameRadius = 9.0f;
 
+    /*  The system's own face where it can be had by name (Apple's Typography
+        page): the first of `wanted` that is installed, else empty for JUCE's
+        default sans-serif. Free functions, so the tests can ask them. */
+    static juce::StringArray systemFaces();
+    static juce::String pickFace (const juce::StringArray& installed,
+                                  const juce::StringArray& wanted);
+    const juce::String& getFace() const noexcept { return face; }
+
+    /*  The menus are JUCE's own drawing, not the system's, so they take the
+        house colours: a surface a step lighter than the icon (#2A2F37) with a
+        #3A404A edge and no stripes, words 7:1 and up. */
+    struct MenuLook final : public juce::LookAndFeel_V4
+    {
+        MenuLook();
+        void drawPopupMenuBackgroundWithOptions (juce::Graphics&, int width, int height,
+                                                 const juce::PopupMenu::Options&) override;
+        juce::Font getPopupMenuFont() override;
+
+        juce::String face;   // the editor's, so the menus are set in it too
+    };
+
 private:
     void changeListenerCallback (juce::ChangeBroadcaster*) override
     {
@@ -61,7 +82,11 @@ private:
     void drawCircle (juce::Graphics&, float centreX, float centreY, float radius,
                      int pitchClass, const scaleview::Key&, juce::Colour highlight) const;
 
+    juce::Font textFont (float height) const;
+
+    MenuLook menuLook;   // first, so it outlives everything that uses it
     ScaleViewProcessor& processor;
+    juce::String face;   // picked once, in the constructor
 
     std::pair<juce::uint64, juce::uint64> lastHeldMask { 0, 0 };
     std::array<bool, 12> heldClasses {};   // which circles to ring

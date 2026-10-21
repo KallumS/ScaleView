@@ -13,7 +13,8 @@ while Db major - the same seven notes - reads Db Eb F Gb Ab Bb C.
 ![ScaleView](docs/screenshot.png)
 
 Notes you play are ringed, and the label names the chord you are holding -
-`Cmin7`, `Bsus2`, `C/E` - instead of the scale name.
+`Cmin7`, `Bsus2`, `C/E` - instead of the scale name. Notes outside the key
+stay dark, with a light rim so you can still see where each one sits.
 
 The plugin does not touch your audio: it passes both the audio and the MIDI
 through untouched and exists to be looked at, so it can sit on any track.
@@ -199,8 +200,9 @@ A second suite, `Tests/TestProcessorMidi.cpp`, needs JUCE because it drives the
 real processor: notes arriving on the audio thread, note-offs and all-notes-off,
 that the MIDI is passed on rather than consumed, notes at both ends of the two
 64-bit masks that track them, plugin state surviving a save and reload, and the
-editor's paint path drawing rings around the held notes. It is built with the
-plugin and run by the same `ctest`.
+editor's paint path drawing rings around the held notes, every circle's edge
+standing out from the background with every highlight colour, and the menus'
+colours. It is built with the plugin and run by the same `ctest`.
 
 ## Layout
 
