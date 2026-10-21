@@ -124,9 +124,12 @@ the scheme sat on it so easily.
 **Two things are deliberately still off it, and both need a decision rather
 than a tidy-up:**
 
-- **The unlit circle is dark with light text** (`COLOR_OFF` `#4C4F59`,
-  `COLOR_TEXT_OFF` `#9EA3B2`), where the scheme's unchosen button is `#A9AFBA`
-  with `#14171C` ink. Inverting it would follow the scheme exactly, and it
+- **The unlit circle is dark with light text**, where the scheme's unchosen
+  button is `#A9AFBA` with `#14171C` ink. Its two colours are ramp entries now
+  (decision 0013): `COLOR_OFF` `#3A404A` and `COLOR_TEXT_OFF` `#DDE1E7`, 8.0:1,
+  where `#4C4F59` and `#9EA3B2` were 3.2:1 - under Apple's 7:1 for small text,
+  and under its 4.5:1 floor. The darker fill also lets the notes outside the
+  key recede further. Inverting the pair is still the open question. Inverting it would follow the scheme exactly, and it
   would also make the notes *outside* the key the brightest thing in the icon -
   which is the opposite of what the icon is for. These two constants move
   together or not at all: a light fill demands the dark ink, and a dark fill
@@ -238,6 +241,21 @@ Two other findings from it are worth keeping:
   288 of them now that Simple offers Pro's eighteen roots. An earlier version
   of this file credited that sweep to the Pro suite, which never had it - worth
   knowing before deleting anything on the strength of a claim written here.
+- **The rest of Apple's HIG Foundations** (decision 0013,
+  [`docs/apple-hig-review.md`](docs/apple-hig-review.md)): every letter 7:1 on
+  what it sits on (both suites check each name against its circle, with every
+  highlight); no text under `MIN_TEXT` (10) points, so a circle under
+  `MIN_NAME_RADIUS` shows no name; **S** or **Return** opens the scale list and
+  **O** the options from the keyboard, in the middle of the icon. The plugin
+  takes the same colours.
+  **The final sweep (1.2.0, 0013's dated section):** every circle's edge is
+  3:1 on the background - an unlit one by a `COLOR_EDGE` rim (`#6D7581`),
+  drawn as a filled circle under the fill, so **the only unfilled strokes are
+  still the played-note ring** and the ring tests keep meaning what they say;
+  the face is the system's (`pickFace()`, after `gfx.init`, kept only if
+  `gfx.getfont()` reports it), and **every `setfont` takes `FACE`, never a
+  name**. Both mocks answer `gfx.getfont` as an OS would: an unknown face
+  becomes the first in `systemFaces`.
 - **Menu words follow Apple's writing guidelines** (decision 0012, after
   Noterator's 0053): title-style menu items with a verb first where they act
   ("Choose a Random Scale"), `…` only on an item that asks for more, the

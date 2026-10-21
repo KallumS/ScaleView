@@ -65,6 +65,8 @@ Copy whichever script you want (or both) anywhere, then in REAPER:
 | --- | --- |
 | Click a circle | Scale list - pick a root note under a scale type |
 | Click anywhere else | Display options - see below |
+| `S` or `Return` | Scale list, from the keyboard |
+| `O` | Display options, from the keyboard |
 | `D` | Dock / undock the window |
 | `Esc` or the close box | Quit |
 
@@ -95,6 +97,11 @@ circle and drifting off still opens the scale list.
 To keep it in the REAPER UI rather than floating, dock it (click clear of the
 circles > **Dock Window**, or press `D`). The window position, dock state, size and the
 selected scale are all remembered between sessions.
+
+Circles outside the scale stay dark, so the scale stands out, but each has a
+thin lighter rim so you can still see where every note sits. Names are set in
+your system's own typeface (San Francisco on a Mac, Segoe UI on Windows) where
+REAPER can find it, and in Arial otherwise.
 
 The drawing scales with the window, and keeps its 2:1 proportions centred in
 whatever space it is given - so a dock that is much wider than it is tall shows
@@ -137,7 +144,8 @@ The colours are 0..1 RGB triplets near the top of the script:
 
 ```lua
 local COLOR_BG       = {0.1375, 0.1532, 0.1806}  -- icon background, #23272e
-local COLOR_OFF      = {0.30, 0.31, 0.35}        -- note not in the scale
+local COLOR_OFF      = {0.2275, 0.2510, 0.2902}  -- note not in the scale, #3A404A
+local COLOR_EDGE     = {0.4275, 0.4588, 0.5059}  -- rim of a circle outside the scale, #6D7581
 local COLOR_TEXT_ON  = {0.0786, 0.0904, 0.1100}  -- note name on a lit circle, #14171c
 local COLOR_HELD     = {1.00, 0.9492, 0.0000}    -- ring around a played note, #FFF200
 ```
