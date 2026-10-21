@@ -37,6 +37,10 @@
         <changelog><![CDATA[Easier to read and reachable from the keyboard, after Apple's design guidelines: note names on circles outside the key are now light on a darker circle (8:1 contrast, was 3:1); no text is smaller than 10 points, so a very small icon shows the circles without names; S or Return opens the scale list and O the options.]]></changelog>
         <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/bf05472e23082720328ffd4230f39012f25212a1/reascripts/ScaleView%20Pro.lua</source>
       </version>
+      <version name="1.2.0" author="kallums" time="2026-10-21T12:00:00Z">
+        <changelog><![CDATA[Easier to see and in your system's typeface, after Apple's design guidelines: circles outside the scale keep their dark fill but get a thin lighter rim, so every note's place shows (3:1 contrast, was 1.4:1); note names and the label use San Francisco on a Mac or Segoe UI on Windows where REAPER can find them, Arial otherwise.]]></changelog>
+        <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/40ebb48618b9f46138e3073f1d0ecd36a128f840/reascripts/ScaleView%20Pro.lua</source>
+      </version>
       <metadata>
         <description><![CDATA[{\pard ScaleView Pro\par
 A 200x100 icon showing the twelve pitch classes as circles - five black keys over seven white - with the notes of the selected scale lit, the notes you play ringed, and the chord you are holding named underneath.\par
@@ -57,6 +61,10 @@ Click a circle for the scale list, click anywhere else for display options. Eith
       <version name="1.1.0" author="kallums" time="2026-10-15T18:00:00Z">
         <changelog><![CDATA[Easier to read and reachable from the keyboard, after Apple's design guidelines: note names on circles outside the key are now light on a darker circle (8:1 contrast, was 3:1); no text is smaller than 10 points, so a very small icon shows the circles without names; S or Return opens the scale list and O the options.]]></changelog>
         <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/bf05472e23082720328ffd4230f39012f25212a1/reascripts/ScaleView%20Simple.lua</source>
+      </version>
+      <version name="1.2.0" author="kallums" time="2026-10-21T12:00:00Z">
+        <changelog><![CDATA[Easier to see and in your system's typeface, after Apple's design guidelines: circles outside the scale keep their dark fill but get a thin lighter rim, so every note's place shows (3:1 contrast, was 1.4:1); note names and the label use San Francisco on a Mac or Segoe UI on Windows where REAPER can find them, Arial otherwise.]]></changelog>
+        <source main="main">https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/40ebb48618b9f46138e3073f1d0ecd36a128f840/reascripts/ScaleView%20Simple.lua</source>
       </version>
       <metadata>
         <description><![CDATA[{\pard ScaleView Simple\par
