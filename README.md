@@ -74,7 +74,7 @@ Clicking the icon clear of the circles opens:
 
 | Option | Effect |
 | --- | --- |
-| Random Scale | Picks a scale at random, for when you can't decide - never the one already showing |
+| Choose a Random Scale | Picks a scale at random, for when you can't decide - never the one already showing |
 | Show Note Names | Draws the note name inside each circle |
 | Simplify Note Names | Turns off key-aware spelling and names every note like a piano key |
 | Highlight Colour | Teal (default), Orange, Light Green, Light Blue, Light Pink or White. None of them is the colour of the ring around a note being played (`#FFF200`), because a highlight of that would swallow it |
@@ -334,7 +334,7 @@ whatever accidental that letter then needs, which is how written music works:
 
 Because the spelling follows how the key is written rather than which notes
 sound, C# major and Db major are different keys here even though they light the
-same seven circles. **Random Scale** picks from those spellings too, so it can
+same seven circles. **Choose a Random Scale** picks from those spellings too, so it can
 land on Gb Major or F# Major. The scale list offers **both spellings of every
 root** - C# and Db, F# and Gb, and so on - plus Cb, 18 roots in all. There is no
 "Swap Sharps & Flats" option: the key decides. The five notes outside the
@@ -361,7 +361,7 @@ either button does the same thing:
 | Click | Opens |
 | --- | --- |
 | On a circle | The scale list |
-| On empty space | Random Scale, note names, Simplify Note Names, highlight colour, dock, close |
+| On empty space | Choose a Random Scale, note names, Simplify Note Names, highlight colour, dock, close |
 
 A click belongs where it began, so pressing on a circle and drifting off still
 opens the scale list. This replaced an earlier two-button arrangement, where a

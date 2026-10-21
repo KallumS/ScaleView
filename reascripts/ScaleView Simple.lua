@@ -25,7 +25,7 @@
  *                 does the same thing.
  *                 Press D to dock/undock, Esc or the window close box to exit.
  * Author:         kallums
- * Version:        1.0
+ * Version:        1.0.4
  * Provides:       [main] .
 --]]
 
@@ -605,7 +605,7 @@ end
 local function optionsMenu()
   local menu = newMenu()
 
-  addItem(menu, "Random Scale", randomScale)
+  addItem(menu, "Choose a Random Scale", randomScale)
   addSeparator(menu)
 
   addItem(menu, "Show Note Names", function()

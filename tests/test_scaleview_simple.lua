@@ -83,7 +83,7 @@ gfx = {
   showmenu = function(str)
     lastMenuStr = str
     menuOpened = str:find("Clear Scale", 1, true) and "scale"
-              or str:find("Random Scale", 1, true) and "options" or "?"
+              or str:find("Choose a Random Scale", 1, true) and "options" or "?"
     local n = 0
     for field in (str .. "|"):gmatch("([^|]*)|") do
       local kind, label = classify(field)
@@ -301,7 +301,7 @@ end
 -- immediately or a frame or two later. The second case is what still bit in
 -- REAPER after the first fix.
 for _, delayFrames in ipairs({0, 1, 3}) do
-  chooseOption("Random Scale")          -- use a menu, which leaves the stray click
+  chooseOption("Choose a Random Scale")          -- use a menu, which leaves the stray click
 
   for _ = 1, delayFrames do
     menuOpened = nil
