@@ -51,3 +51,30 @@ the background, with each of the six highlights; no `setfont` under 10 at four
 window sizes; a 150x75 icon draws no names; S, Return and O open their menus
 inside the window. Each of the seven rules was broken on purpose in each script
 and the suite failed.
+
+## Final sweep, 21 October 2026 (version 1.2.0)
+
+Every implementable item of the Foundations pages was gone through again
+([`apple-hig-review.md`](../apple-hig-review.md), *Final sweep*). Two gaps:
+
+- **An unlit circle was 1.4:1 on the background** (`#3A404A` on `#23272E`),
+  under the 3:1 a shape that means something needs; in a small dock with no
+  names, where a lit note sits among the twelve is read from the unlit ones
+  round it. Each now has a rim of `#6D7581`, 3.2:1, and keeps its dark fill,
+  so the notes outside the key still recede and the open question of
+  inverting the pair stays open. The rim is a filled circle with the fill
+  drawn inside it, so every unfilled stroke is still the played-note ring,
+  which stays `#FFF200` and unconditional (0006).
+- **The system font.** `pickFace()` asks for `.AppleSystemUIFont`, then
+  `Segoe UI`, and keeps a face only when `gfx.getfont()` reports it was
+  given; else Arial. Picked once after `gfx.init`; every `setfont` uses it.
+
+Enforcement: both suites check every circle's outer edge 3:1 with all six
+highlights, and the face with three sets of "system" faces. Five sabotages
+per script (no rim; always Arial; trusting the name without `getfont`; names
+still in Arial; the pick not kept), all caught.
+
+Unverified in REAPER: which name `gfx.getfont()` reports for San Francisco
+(`.AppleSystemUIFont` or `.SFNS…` are both accepted), and that "Bbb" still
+fits its circle at 10 points in San Francisco, which is a little wider than
+Arial.

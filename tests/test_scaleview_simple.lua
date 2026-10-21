@@ -70,10 +70,22 @@ local function classify(field)
   return "item", rest
 end
 
+-- Fonts as the OS gives them: a face it has is used, any other quietly becomes
+-- the first it has, and gfx.getfont reports what was really used.
+local systemFaces, fontFaces, fontIdx = {"DejaVu Sans", "Arial"}, {}, 1
 gfx = {
   w = 200, h = 100, x = 0, y = 0, mouse_x = 10, mouse_y = 10, mouse_cap = 0,
   init = function() end, quit = function() end, update = function() end,
-  rect = function() end, setfont = function() end,
+  rect = function() end,
+  setfont = function(i, face)
+    fontIdx = i
+    if face then
+      local got = systemFaces[1]
+      for _, f in ipairs(systemFaces) do if f:lower() == face:lower() then got = f end end
+      fontFaces[i] = got
+    end
+  end,
+  getfont = function() return fontIdx, fontFaces[fontIdx] end,
   measurestr = function(str) return #str * 6, 12 end,
   set = function(r, g, b) gfx._color = {r, g, b} end,
   circle = function(x, y, r, fill) drawn[#drawn + 1] = {x = x, y = y, r = r, fill = fill, color = gfx._color} end,
@@ -600,13 +612,14 @@ do
     gfx.w = gfx.w == 200 and 201 or 200   -- force a repaint, as label() does
     frame()
     local on = {}
-    local i = 0
+    local i, last = 0, nil
     for _, circle in ipairs(drawn) do
-      if circle.r then
-        i = i + 1
-        if circle.color[1] == TEAL[1] and circle.color[2] == TEAL[2] then
-          on[#on + 1] = DRAW_ORDER[i]
-        end
+      local at = circle.r and circle.fill and circle.x .. "," .. circle.y
+      if at and at ~= last then   -- an unlit circle is drawn twice: rim, then fill
+        i, last = i + 1, at
+      end
+      if at and circle.color[1] == TEAL[1] and circle.color[2] == TEAL[2] then
+        on[#on + 1] = DRAW_ORDER[i]
       end
     end
     table.sort(on)
@@ -762,6 +775,67 @@ do
   gfx.getchar, gfx.showmenu = getchar, showmenu
   settleMouse()
   print("S and Return open the scale list, O the options")
+end
+
+-- The system's own face (decision 0013, 21 October 2026): San Francisco when
+-- getfont says it was given, then Segoe UI, else Arial - and every text after.
+do
+  local faces, setfont = {}, gfx.setfont
+  gfx.setfont = function(i, face, size)
+    if face then faces[#faces + 1] = face end
+    return setfont(i, face, size)
+  end
+  for _, case in ipairs({
+    {{"DejaVu Sans", "Arial"}, "Arial"},
+    {{"Helvetica", ".AppleSystemUIFont", "Arial"}, ".AppleSystemUIFont"},
+    {{"Arial", "Segoe UI"}, "Segoe UI"},
+  }) do
+    systemFaces = case[1]
+    dofile(SCRIPT)
+    faces = {}
+    label()
+    local wrong = {}
+    for _, f in ipairs(faces) do if f ~= case[2] then wrong[#wrong + 1] = f end end
+    if #faces == 0 then fail("no text was drawn to check the face")
+    elseif #wrong > 0 then
+      fail("with " .. table.concat(case[1], ", ") .. " the face should be " .. case[2]
+           .. ", was " .. table.concat(wrong, ", "))
+    end
+  end
+  gfx.setfont, systemFaces = setfont, {"DejaVu Sans", "Arial"}
+  print("the system's own face where getfont says it was given, else Arial")
+end
+
+-- Every circle's outer edge is 3:1 or more on the background (Apple's floor
+-- for a shape that means something): a lit one by its fill, an unlit one by
+-- its rim. With every highlight.
+do
+  local function lin(c) return c <= 0.03928 and c / 12.92 or ((c + 0.055) / 1.055) ^ 2.4 end
+  local function lum(c) return 0.2126 * lin(c[1]) + 0.7152 * lin(c[2]) + 0.0722 * lin(c[3]) end
+  local BG = {0.1375, 0.1532, 0.1806}
+  chooseScale("C Major")
+  local faint, seen = {}, 0
+  for _, colour in ipairs({"Teal", "Orange", "Light Green", "Light Blue", "Light Pink", "White"}) do
+    chooseOption(colour)
+    label()
+    local outer = {}
+    for _, c in ipairs(drawn) do
+      if c.fill then
+        local k = c.x .. "," .. c.y
+        if not outer[k] or c.r > outer[k].r then outer[k] = c end
+      end
+    end
+    for _, c in pairs(outer) do
+      seen = seen + 1
+      local a, b = lum(c.color), lum(BG)
+      if a < b then a, b = b, a end
+      local r = (a + 0.05) / (b + 0.05)
+      if r < 3 then faint[#faint + 1] = string.format("%s %.1f:1", colour, r) end
+    end
+  end
+  if seen < 72 then fail("the edge check saw " .. seen .. " circles, expected 72") end
+  if #faint > 0 then fail("circles under 3:1 on the background: " .. table.concat(faint, ", ")) end
+  print("every circle's edge is 3:1 or more on the background")
 end
 
 if failures > 0 then print(failures .. " FAILURE(S)") os.exit(1) end

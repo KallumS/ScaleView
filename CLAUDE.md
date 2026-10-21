@@ -248,6 +248,14 @@ Two other findings from it are worth keeping:
   `MIN_NAME_RADIUS` shows no name; **S** or **Return** opens the scale list and
   **O** the options from the keyboard, in the middle of the icon. The plugin
   takes the same colours.
+  **The final sweep (1.2.0, 0013's dated section):** every circle's edge is
+  3:1 on the background - an unlit one by a `COLOR_EDGE` rim (`#6D7581`),
+  drawn as a filled circle under the fill, so **the only unfilled strokes are
+  still the played-note ring** and the ring tests keep meaning what they say;
+  the face is the system's (`pickFace()`, after `gfx.init`, kept only if
+  `gfx.getfont()` reports it), and **every `setfont` takes `FACE`, never a
+  name**. Both mocks answer `gfx.getfont` as an OS would: an unknown face
+  becomes the first in `systemFaces`.
 - **Menu words follow Apple's writing guidelines** (decision 0012, after
   Noterator's 0053): title-style menu items with a verb first where they act
   ("Choose a Random Scale"), `…` only on an item that asks for more, the

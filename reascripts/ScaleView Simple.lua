@@ -26,7 +26,7 @@
  *                 Press S or Return for the scale list, O for the options,
  *                 D to dock/undock, Esc or the window close box to exit.
  * Author:         kallums
- * Version:        1.1.0
+ * Version:        1.2.0
  * Provides:       [main] .
 --]]
 
@@ -43,12 +43,14 @@ local EXT_LEGACY   = {"kallums_ScaleViewSimple"}
 
 local MIN_TEXT        = 10   -- points: Apple's smallest text on the Mac (decision 0013)
 local MIN_NAME_RADIUS = 9    -- a circle this small still holds "Bbb" at MIN_TEXT
+local FACE            = "Arial"  -- the system's own face once the window is open: pickFace()
 local DEFAULT_W    = 200
 local DEFAULT_H    = 100
 
 -- Colours are 0..1 RGB triplets, tweak to taste.
 local COLOR_BG        = {0.1375, 0.1532, 0.1806}  -- icon background, #23272e
 local COLOR_OFF       = {0.2275, 0.2510, 0.2902}  -- note not in the selected scale, #3A404A
+local COLOR_EDGE      = {0.4275, 0.4588, 0.5059}  -- rim of an unlit circle, #6D7581: 3.2:1 on the background (decision 0013)
 local COLOR_LABEL     = {0.7492, 0.7727, 0.8080}  -- scale name text, #BFC5CE
 local COLOR_TEXT_OFF  = {0.8667, 0.8824, 0.9059}  -- note name on an unlit circle, #DDE1E7: 8.0:1 (decision 0013)
 local COLOR_TEXT_ON   = {0.0786, 0.0904, 0.1100}  -- note name on a lit circle, #14171c
@@ -455,15 +457,26 @@ end
 local function drawCircle(x, y, r, pc)
   local on = active[pc] == true
   local fill = on and highlightColor() or COLOR_OFF
+  local inner = r
+  if not on then
+    -- A dark circle on the dark background is 1.4:1, too faint to show where
+    -- the note sits (Apple's 3:1 for a shape that means something). A rim of
+    -- COLOR_EDGE, 3.2:1, shows it and the fill stays dark, so the notes
+    -- outside the key still recede. Drawn filled, so the only unfilled
+    -- strokes are still the played-note ring.
+    setColor(COLOR_EDGE)
+    gfx.circle(x, y, r, true, true)
+    inner = r - math.max(1, r / 12)
+  end
   setColor(fill)
-  gfx.circle(x, y, r, true, true)
+  gfx.circle(x, y, inner, true, true)
 
   if state.showNames and r >= MIN_NAME_RADIUS then
     local name = noteName(pc)
     -- "Bbb" needs to fit the same circle as "B". Never under MIN_TEXT points,
     -- Apple's smallest for the Mac: a circle too small for that shows no name.
     local fit = ({0.95, 0.80, 0.62})[#name] or 0.55
-    gfx.setfont(2, "Arial", math.max(MIN_TEXT, math.floor(r * fit)))
+    gfx.setfont(2, FACE, math.max(MIN_TEXT, math.floor(r * fit)))
     local tw, th = gfx.measurestr(name)
     setColor(on and COLOR_TEXT_ON or COLOR_TEXT_OFF)
     gfx.x, gfx.y = x - tw / 2, y - th / 2
@@ -490,7 +503,7 @@ local function draw()
 
   -- Current scale name.
   if L.labelH > 6 then
-    gfx.setfont(1, "Arial", math.max(MIN_TEXT, math.floor(L.labelH * 0.62)))
+    gfx.setfont(1, FACE, math.max(MIN_TEXT, math.floor(L.labelH * 0.62)))
     local text = displayLabel()
     local tw, th = gfx.measurestr(text)
     setColor(COLOR_LABEL)
@@ -744,6 +757,27 @@ local function main()
   reaper.defer(main)
 end
 
+--[[  The system's own face where REAPER can find it (Apple's Typography page):
+    San Francisco on a Mac, Segoe UI on Windows, else Arial as before. gfx takes
+    a face by name and quietly substitutes another when it does not know it, so
+    each is asked for and gfx.getfont() says what was really given. It needs
+    the window, so it runs after gfx.init. As Orchestration Helper does.  ]]
+local SYSTEM_FACES = {
+  {".AppleSystemUIFont", "applesystemui", ".sf"},   -- reported under either name
+  {"Segoe UI", "segoe"},
+}
+local function pickFace()
+  for _, try in ipairs(SYSTEM_FACES) do
+    gfx.setfont(1, try[1], 12)
+    local _, got = gfx.getfont()
+    got = tostring(got or ""):lower()
+    for i = 2, #try do
+      if got:find(try[i], 1, true) then return try[1] end
+    end
+  end
+  return "Arial"
+end
+
 local function init()
   --[[  Tell REAPER the script is on, so a toolbar button bound to it lights up,
       and that re-running the action should stop this instance rather than
@@ -759,7 +793,8 @@ local function init()
   else
     gfx.init(SCRIPT_NAME, w, h, dock)
   end
-  gfx.setfont(1, "Arial", 12)
+  FACE = pickFace()
+  gfx.setfont(1, FACE, 12)
   main()
 end
 
