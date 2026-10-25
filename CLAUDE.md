@@ -1,5 +1,8 @@
 # ScaleView (VST3 / AU / CLAP)
 
+**Branches.** `main` is the plugin. The REAPER script it is ported from is the
+`reaper` branch; the two share no history and are never merged into each other.
+
 A JUCE plugin drawing a 2:1 icon: the twelve pitch classes as circles, five
 black keys over seven white, with the notes of the selected scale lit, the
 notes being played ringed, and the chord being held named underneath. It passes
@@ -68,13 +71,16 @@ ctest --test-dir build --output-on-failure
 
 ## Parity with the ReaScript
 
-`KallumS/ScaleView-for-Reaper` is the original, in Lua, and **ScaleView Pro
+The ReaScript - the **`reaper` branch of this repository**, which until
+October 2026 was the separate repository `KallumS/ScaleView-for-Reaper`
+(`git fetch origin reaper`; the two branches share no history and are never
+merged) - is the original, in Lua, and **ScaleView Pro
 (`reascripts/ScaleView Pro.lua`) is the reference** - the user's word is that
 it is the definitive chord detector. The musical core here is a port and
 **must stay in step**: a naming change is made and measured in Pro first, then
 ported here, and parity is checked against Pro's output, never the other way
 round. The chord engine in `ScaleModel.h` is a line-for-line
-port of that repository's, and every weight in it was arrived at by breaking a
+port of that branch's, and every weight in it was arrived at by breaking a
 test there - read its CLAUDE.md before touching one.
 
 Parity is verified by **diffing output**, which is the technique to reuse rather
@@ -185,7 +191,7 @@ come from the root and scale indices rather than from the names. Chord
 ## The house colour scheme
 
 The colours come from a scheme the user is standardising across their projects;
-**it is written out in full in the ReaScript repo's CLAUDE.md**, and this file
+**it is written out in full in the `reaper` branch's CLAUDE.md**, and this file
 records only what the plugin has to honour.
 
 Carriers: Accent `#FFF200` (`colourHeld`), Ground `#23272E` (`colourBackground`),
@@ -199,7 +205,7 @@ is **R < G < B** on every entry - a neutral grey reads flat beside the yellow,
 so a new grey has to be picked from the ramp, not mixed.
 
 `colourUnlit` (`#4D4F59`) and `colourNameUnlit` (`#9EA3B3`) are deliberately
-still off the scheme, pending a decision recorded in the ReaScript repo: the
+still off the scheme, pending a decision recorded on the `reaper` branch: the
 scheme's unchosen button is light with dark ink, which here would make the notes
 outside the key the brightest thing in the icon.
 

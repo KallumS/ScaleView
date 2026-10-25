@@ -18,8 +18,8 @@ Notes you play are ringed, and the label names the chord you are holding -
 The plugin does not touch your audio: it passes both the audio and the MIDI
 through untouched and exists to be looked at, so it can sit on any track.
 
-This is a port of [ScaleView for REAPER](https://github.com/KallumS/ScaleView-for-Reaper),
-a ReaScript. It matches **ScaleView Pro**, the one of the two scripts there that
+This is a port of [ScaleView for REAPER](https://github.com/KallumS/ScaleView/tree/reaper),
+a ReaScript, which lives on this repository's `reaper` branch. It matches **ScaleView Pro**, the one of the two scripts there that
 reads chords; the musical core is the same, verified against it note for note.
 
 ## Using it
