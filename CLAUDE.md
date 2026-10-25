@@ -1,5 +1,8 @@
 # ScaleView (VST3 / AU / CLAP)
 
+**Branches.** `main` is the plugin. The REAPER script it is ported from is the
+`reaper` branch; the two share no history and are never merged into each other.
+
 A JUCE plugin drawing a 2:1 icon: the twelve pitch classes as circles, five
 black keys over seven white, with the notes of the selected scale lit, the
 notes being played ringed, and the chord being held named underneath. It passes
@@ -74,13 +77,16 @@ ctest --test-dir build --output-on-failure
 
 ## Parity with the ReaScript
 
-`KallumS/ScaleView-for-Reaper` is the original, in Lua, and **ScaleView Pro
+The ReaScript - the **`reaper` branch of this repository**, which until
+October 2026 was the separate repository `KallumS/ScaleView-for-Reaper`
+(`git fetch origin reaper`; the two branches share no history and are never
+merged) - is the original, in Lua, and **ScaleView Pro
 (`reascripts/ScaleView Pro.lua`) is the reference** - the user's word is that
 it is the definitive chord detector. The musical core here is a port and
 **must stay in step**: a naming change is made and measured in Pro first, then
 ported here, and parity is checked against Pro's output, never the other way
 round. The chord engine in `ScaleModel.h` is a line-for-line
-port of that repository's, and every weight in it was arrived at by breaking a
+port of that branch's, and every weight in it was arrived at by breaking a
 test there - read its CLAUDE.md before touching one.
 
 Parity is verified by **diffing output**, which is the technique to reuse rather
@@ -191,7 +197,7 @@ come from the root and scale indices rather than from the names. Chord
 ## The house colour scheme
 
 The colours come from a scheme the user is standardising across their projects;
-**it is written out in full in the ReaScript repo's CLAUDE.md**, and this file
+**it is written out in full in the `reaper` branch's CLAUDE.md**, and this file
 records only what the plugin has to honour.
 
 Carriers: Accent `#FFF200` (`colourHeld`), Ground `#23272E` (`colourBackground`),
@@ -207,13 +213,13 @@ so a new grey has to be picked from the ramp, not mixed.
 `colourUnlit` and `colourNameUnlit` are a dark fill with light letters, where
 the scheme's unchosen button is light with dark ink; inverting them would make
 the notes outside the key the brightest thing in the icon, and that decision is
-still open in the ReaScript repo. Since October 2026 both are ramp entries,
+still open on the `reaper` branch. Since October 2026 both are ramp entries,
 `#3A404A` and `#DDE1E7` (8.0:1; `#4D4F59` and `#9EA3B3` were 3.2:1), after
-ScaleView for REAPER's decision 0013.
+the `reaper` branch's decision 0013.
 
 ## Apple's HIG Foundations
 
-Ported from ScaleView for REAPER's decision 0013 (its `docs/apple-hig-review.md`
+Ported from the `reaper` branch's decision 0013 (its `docs/apple-hig-review.md`
 is the review): every letter 7:1 on what it sits on; no text under
 `minimumTextSize` (10 points), so a circle under `minimumNameRadius` shows no
 name; **S** or **Return** opens the scale list and **O** the options
