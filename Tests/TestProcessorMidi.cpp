@@ -9,6 +9,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include "../Source/PluginProcessor.h"
+#include "../Source/PluginEditor.h"
 
 namespace
 {
@@ -31,6 +32,24 @@ juce::MidiBuffer noteOn (int note, juce::uint8 velocity = 100)
     juce::MidiBuffer buffer;
     buffer.addEvent (juce::MidiMessage::noteOn (1, note, velocity), 0);
     return buffer;
+}
+// WCAG's relative luminance and contrast ratio, as Apple's Accessibility
+// page measures it.
+double luminance (juce::Colour c)
+{
+    auto channel = [] (juce::uint8 v)
+    {
+        const auto x = v / 255.0;
+        return x <= 0.04045 ? x / 12.92 : std::pow ((x + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * channel (c.getRed()) + 0.7152 * channel (c.getGreen())
+         + 0.0722 * channel (c.getBlue());
+}
+
+double contrast (juce::Colour a, juce::Colour b)
+{
+    const auto la = luminance (a), lb = luminance (b);
+    return (juce::jmax (la, lb) + 0.05) / (juce::jmin (la, lb) + 0.05);
 }
 } // namespace
 
@@ -197,6 +216,124 @@ int main()
 
         check (ringPixels > 100, "the editor draws rings around the held notes ("
                + juce::String (ringPixels) + " ring pixels)");
+
+        /*  Apple's HIG Foundations (ScaleView for REAPER's decision 0013).
+            C is outside Gb major, so its circle is unlit: #3A404A, under the
+            name's letters #DDE1E7 at 8.0:1. Sampled below the letter. */
+        {
+            const float step = 400.0f / 7.0f, radius = juce::jmin (step * 0.40f, 160.0f * 0.20f);
+            const auto pixel = image.getPixelAt ((int) (0.5f * step), (int) (160.0f * 0.76f + radius * 0.75f));
+            check (std::abs (pixel.getRed() - 58) <= 2 && std::abs (pixel.getGreen() - 64) <= 2
+                   && std::abs (pixel.getBlue() - 74) <= 2,
+                   "an unlit circle is #3A404A (got " + pixel.toDisplayString (false) + ")");
+        }
+
+        /*  The final sweep: every circle's outer edge shows 3:1 against the
+            background, with every highlight. C (unlit in Gb major) has a
+            #6D7581 rim; B (lit) is the highlight itself. Walk down from each
+            centre to just past its edge - short of where a ring would be -
+            and take the strongest contrast found there. */
+        {
+            const juce::Colour background (35, 39, 46);
+            const float step = 400.0f / 7.0f, radius = juce::jmin (step * 0.40f, 160.0f * 0.20f);
+            const float centreY = 160.0f * 0.76f;
+            const auto savedHighlight = processor.getHighlightIndex();
+
+            for (size_t h = 0; h < scaleview::highlights.size(); ++h)
+            {
+                processor.setHighlightIndex ((int) h);
+                juce::Image shot (juce::Image::ARGB, 400, 200, true);
+                {
+                    juce::Graphics g (shot);
+                    editor->paintEntireComponent (g, true);
+                }
+
+                for (const auto slot : { 0, 6 })   // C unlit, B lit
+                {
+                    const auto x = (int) (((float) slot + 0.5f) * step);
+                    double best = 1.0;
+                    for (int y = (int) (centreY + radius * 0.85f); y <= (int) (centreY + radius + 1.0f); ++y)
+                        best = juce::jmax (best, contrast (shot.getPixelAt (x, y), background));
+
+                    check (best >= 3.0, juce::String (slot == 0 ? "an unlit" : "a lit")
+                           + " circle's edge is 3:1 on the background with "
+                           + scaleview::highlights[h].name + " ("
+                           + juce::String (best, 2) + ":1)");
+                }
+            }
+            processor.setHighlightIndex (savedHighlight);
+        }
+
+        /*  The system face (Apple's Typography page): the first wanted face
+            that is installed, else JUCE's default; never one not installed. */
+        check (ScaleViewEditor::pickFace ({ "Arial", "Segoe UI" }, { "Segoe UI" }) == "Segoe UI",
+               "the system face is used when installed");
+        check (ScaleViewEditor::pickFace ({ "Arial", "Verdana" }, { "Segoe UI" }).isEmpty(),
+               "a system face not installed is not asked for");
+       #if JUCE_WINDOWS
+        check (ScaleViewEditor::systemFaces().contains ("Segoe UI"), "Windows asks for Segoe UI");
+       #else
+        check (ScaleViewEditor::systemFaces().isEmpty(), "this platform keeps JUCE's default sans-serif");
+       #endif
+
+        auto* view = dynamic_cast<ScaleViewEditor*> (editor.get());
+        check (view != nullptr, "the editor is ScaleView's");
+        if (view != nullptr)
+        {
+            using KM = ScaleViewEditor::KeyMenu;
+            check (ScaleViewEditor::menuForKey (juce::KeyPress ('s')) == KM::scales
+                   && ScaleViewEditor::menuForKey (juce::KeyPress ('S', juce::ModifierKeys::shiftModifier, 'S')) == KM::scales
+                   && ScaleViewEditor::menuForKey (juce::KeyPress (juce::KeyPress::returnKey)) == KM::scales,
+                   "S and Return open the scale list");
+            check (ScaleViewEditor::menuForKey (juce::KeyPress ('o')) == KM::options,
+                   "O opens the options");
+            check (ScaleViewEditor::menuForKey (juce::KeyPress ('x')) == KM::none
+                   && ScaleViewEditor::menuForKey (juce::KeyPress ('s', juce::ModifierKeys::commandModifier, 's')) == KM::none,
+                   "other keys, and Cmd+S, are left to the host");
+            check (view->getWantsKeyboardFocus(), "the editor takes keyboard focus");
+
+            /*  The menus are JUCE's drawing, so they take the house colours: a
+                surface lighter than the icon, words 7:1, a #3A404A edge and no
+                stripes (JUCE's default draws one every third line). */
+            {
+                using PM = juce::PopupMenu;
+                auto& look = view->getLookAndFeel();
+                const juce::Colour ground (35, 39, 46);
+                const auto menu = look.findColour (PM::backgroundColourId);
+                check (luminance (menu) > luminance (ground)
+                       && menu.getRed() < menu.getGreen() && menu.getGreen() < menu.getBlue(),
+                       "a menu is a blue-shifted grey lighter than the icon (#" + menu.toDisplayString (false) + ")");
+                check (contrast (look.findColour (PM::textColourId), menu) >= 7.0
+                       && contrast (look.findColour (PM::headerTextColourId), menu) >= 7.0
+                       && contrast (look.findColour (PM::highlightedTextColourId),
+                                    look.findColour (PM::highlightedBackgroundColourId)) >= 7.0,
+                       "a menu's words are 7:1, under the pointer too");
+
+                juce::Image surface (juce::Image::ARGB, 120, 60, true);
+                {
+                    juce::Graphics g (surface);
+                    look.drawPopupMenuBackgroundWithOptions (g, 120, 60, PM::Options());
+                }
+                bool plain = true;
+                for (int y = 1; y < 59; ++y)
+                    plain = plain && surface.getPixelAt (60, y) == menu;
+                check (plain && surface.getPixelAt (0, 30) == juce::Colour (58, 64, 74)
+                       && surface.getPixelAt (60, 0) == juce::Colour (58, 64, 74),
+                       "a menu is one plain colour inside a #3A404A edge");
+            }
+            check (view->getFace() == ScaleViewEditor::pickFace (juce::Font::findAllTypefaceNames(),
+                                                                 ScaleViewEditor::systemFaces()),
+                   "the editor uses the face it picked: \"" + view->getFace() + "\"");
+
+            check (view->getTitle().contains (processor.getKey().label)
+                   && view->getTitle().contains ("playing"),
+                   "VoiceOver reads the key and the chord: " + view->getTitle());
+            // JUCE hands out a component's handler only once it is on screen,
+            // so ask for the one the editor would give.
+            const auto handler = view->createAccessibilityHandler();
+            check (handler != nullptr && handler->getRole() == juce::AccessibilityRole::image,
+                   "the icon is an image to accessibility");
+        }
 
         if (auto* path = std::getenv ("SCALEVIEW_RENDER_TO"))
         {

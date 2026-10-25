@@ -13,7 +13,8 @@ while Db major - the same seven notes - reads Db Eb F Gb Ab Bb C.
 ![ScaleView](docs/screenshot.png)
 
 Notes you play are ringed, and the label names the chord you are holding -
-`Cmin7`, `Bsus2`, `C/E` - instead of the scale name.
+`Cmin7`, `Bsus2`, `C/E` - instead of the scale name. Notes outside the key
+stay dark, with a light rim so you can still see where each one sits.
 
 The plugin does not touch your audio: it passes both the audio and the MIDI
 through untouched and exists to be looked at, so it can sit on any track.
@@ -27,7 +28,9 @@ reads chords; the musical core is the same, verified against it note for note.
 | Action | Result |
 | --- | --- |
 | Left-click | Scale list - pick a root under a scale type |
-| Right-click | Random Scale, note names on/off, Simplify Note Names, highlight colour |
+| Right-click | Choose a Random Scale, note names on/off, Simplify Note Names, highlight colour |
+| `S` or `Return` | Scale list, from the keyboard |
+| `O` | The right-click options, from the keyboard |
 | Play | The notes are ringed and the chord is named |
 
 ### Chord detection
@@ -197,8 +200,9 @@ A second suite, `Tests/TestProcessorMidi.cpp`, needs JUCE because it drives the
 real processor: notes arriving on the audio thread, note-offs and all-notes-off,
 that the MIDI is passed on rather than consumed, notes at both ends of the two
 64-bit masks that track them, plugin state surviving a save and reload, and the
-editor's paint path drawing rings around the held notes. It is built with the
-plugin and run by the same `ctest`.
+editor's paint path drawing rings around the held notes, every circle's edge
+standing out from the background with every highlight colour, and the menus'
+colours. It is built with the plugin and run by the same `ctest`.
 
 ## Layout
 
@@ -214,7 +218,7 @@ plugin and run by the same `ctest`.
 
 - **No docking.** The host owns the plugin window. It is resizable instead and
   keeps its proportions.
-- **Random Scale** is seeded from the system random source rather than
+- **Choose a Random Scale** is seeded from the system random source rather than
   REAPER's clock.
 - **It sees more MIDI than the script does.** The ReaScript reads REAPER's
   global input history, which carries live playing only; the plugin sees
