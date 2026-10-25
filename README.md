@@ -1,5 +1,10 @@
 # ScaleView
 
+> **This is the `reaper` branch of ScaleView: the REAPER script.** The
+> VST3 / AU / CLAP plugin is on `main`. The two share no history and are
+> never merged; this branch was the separate repository
+> `KallumS/ScaleView-for-Reaper` until October 2026.
+
 A small ReaScript (Lua) icon for REAPER that shows the current key signature /
 scale at a glance. Two scripts, both self-contained:
 
@@ -38,17 +43,21 @@ In REAPER: **Extensions > ReaPack > Import repositories**, and paste exactly
 this:
 
 ```
-https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/master/index.xml
+https://raw.githubusercontent.com/KallumS/ScaleView/reaper/index.xml
 ```
 
 Then **Extensions > ReaPack > Browse packages**, find ScaleView Pro or
 ScaleView Simple under *Scales*, and install.
 
 > **It has to be that URL, ending in `index.xml`.** Pasting the repository page
-> instead - `https://github.com/KallumS/ScaleView-for-Reaper` - gives
+> instead - `https://github.com/KallumS/ScaleView` - gives
 > *"The received file is invalid: Premature end of data in tag meta line 269"*.
 > That is ReaPack being handed GitHub's web page and finding HTML where it
 > wanted XML; the `meta` tag it names is part of the page, not of this project.
+
+If you imported the old address, ending in `ScaleView-for-Reaper/master/index.xml`,
+remove it under **Extensions > ReaPack > Manage repositories** and import the
+one above: new versions are published only here.
 
 ## Installing by hand
 

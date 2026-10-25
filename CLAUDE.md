@@ -1,5 +1,10 @@
 # ScaleView for REAPER
 
+**Branches.** This is the `reaper` branch of `KallumS/ScaleView`: the
+ReaScript. The JUCE plugin is `main`. They share no history and are never
+merged into each other; the plugin ports the musical core from here (its
+CLAUDE.md, "Parity with the ReaScript").
+
 Two ReaScripts that draw a 200x100 icon: the twelve pitch classes as circles,
 five black keys on the top row over seven white keys on the bottom, with the
 notes of the selected scale lit.
@@ -1446,11 +1451,15 @@ anyone who has it. That is the whole point of the pin, so:
   version names, so a lower number would read as a downgrade on the one
   install that has it.
 
-The repository is **`KallumS/ScaleView-for-Reaper`** and its default branch is
-**`master`**. `ubiquitous-eureka` is the old name and still redirects, but the
-canonical one is what the index uses. Users import
-`https://raw.githubusercontent.com/KallumS/ScaleView-for-Reaper/master/index.xml`,
-which resolves once the index is merged to the default branch.
+The REAPER version lives on the **`reaper` branch of `KallumS/ScaleView`**
+(the plugin is that repository's `main`). It was the separate repository
+`KallumS/ScaleView-for-Reaper` (once `ubiquitous-eureka`) until October 2026;
+its whole history came across unchanged, so every commit hash pinned in the
+index is the same here, and the index's sources were repointed to this
+repository at those same commits - byte-identical files, which is the one kind
+of edit to an existing version that is safe. Users import
+`https://raw.githubusercontent.com/KallumS/ScaleView/reaper/index.xml`, which
+resolves because the index is on this branch. Publish new versions here only.
 
 ## JSFX, if Pro ever needs to follow playback
 
