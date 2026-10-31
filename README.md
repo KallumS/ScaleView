@@ -96,6 +96,19 @@ Mixolydian, Aeolian, Major Pentatonic, Minor Pentatonic, Major Blues, Minor
 Blues, Whole Tone, Diminished Whole-Half and Diminished Half-Whole - each from
 18 spelled roots (both spellings of every pitch class, plus Cb), so 288 keys.
 
+## Download for macOS
+
+Every push to this repository is built for macOS by GitHub Actions - the
+VST3, the Audio Unit and the CLAP, universal for Apple silicon and Intel, with
+every test run on the way. Open the **Actions** tab, pick the latest **Build**
+run, and download **ScaleView-macOS** from its Artifacts. The zip holds the
+three plugins and `Read me first.txt` ([`docs/INSTALL-MAC.txt`](docs/INSTALL-MAC.txt)),
+which says where each goes.
+
+The plugins are not signed with an Apple Developer ID, so after copying them
+in, run the one Terminal line in that read-me to remove macOS's "downloaded
+from the internet" mark before your DAW scans them.
+
 ## Building
 
 You need [CMake](https://cmake.org) 3.22+ and a C++17 compiler. JUCE is
