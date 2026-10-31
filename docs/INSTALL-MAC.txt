@@ -1,0 +1,35 @@
+Installing ScaleView on a Mac
+=============================
+
+This folder holds the same plugin in three formats. REAPER can use any of
+them; most people use the VST3.
+
+  ScaleView.vst3        VST3  - REAPER, Ableton Live, Cubase, Bitwig ...
+  ScaleView.component   AU    - Logic, GarageBand, and REAPER too
+  ScaleView.clap        CLAP  - REAPER, Bitwig
+
+1. Copy each one you want into its folder. In Finder choose Go > Go to
+   Folder... (Shift-Command-G) and paste the path:
+
+     ScaleView.vst3       ->  ~/Library/Audio/Plug-Ins/VST3
+     ScaleView.component  ->  ~/Library/Audio/Plug-Ins/Components
+     ScaleView.clap       ->  ~/Library/Audio/Plug-Ins/CLAP
+
+   (Make the folder if it is not there.)
+
+2. Remove the "downloaded from the internet" mark. ScaleView is not yet
+   signed with an Apple Developer certificate, so macOS may stop a DAW from
+   loading it until this is done. Open Terminal (Applications > Utilities >
+   Terminal), paste this line and press Return:
+
+     xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/ScaleView.vst3 ~/Library/Audio/Plug-Ins/Components/ScaleView.component ~/Library/Audio/Plug-Ins/CLAP/ScaleView.clap
+
+   It is harmless if one of them is not installed - Terminal just says so.
+
+3. In REAPER: Options > Preferences > Plug-ins > VST, press "Re-scan" (or
+   "Clear cache/re-scan"). ScaleView appears under kallums in the FX
+   browser. Put it on a track that MIDI reaches - the track you play on, or
+   one with MIDI items on it - and it names the chord you are holding.
+
+Updating: copy the new one over the old, run the Terminal line again, and
+re-scan.
