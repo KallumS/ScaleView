@@ -217,10 +217,35 @@ and black rather than stored separately. The grey ramp's load-bearing property
 is **R < G < B** on every entry - a neutral grey reads flat beside the yellow,
 so a new grey has to be picked from the ramp, not mixed.
 
-`colourUnlit` (`#4D4F59`) and `colourNameUnlit` (`#9EA3B3`) are deliberately
-still off the scheme, pending a decision recorded on the `reaper` branch: the
-scheme's unchosen button is light with dark ink, which here would make the notes
-outside the key the brightest thing in the icon.
+`colourUnlit` and `colourNameUnlit` are a dark fill with light letters, where
+the scheme's unchosen button is light with dark ink; inverting them would make
+the notes outside the key the brightest thing in the icon, and that decision is
+still open on the `reaper` branch. Since October 2026 both are ramp entries,
+`#3A404A` and `#DDE1E7` (8.0:1; `#4D4F59` and `#9EA3B3` were 3.2:1), after
+the `reaper` branch's decision 0013.
+
+## Apple's HIG Foundations
+
+Ported from the `reaper` branch's decision 0013 (its `docs/apple-hig-review.md`
+is the review): every letter 7:1 on what it sits on; no text under
+`minimumTextSize` (10 points), so a circle under `minimumNameRadius` shows no
+name; **S** or **Return** opens the scale list and **O** the options
+(`menuForKey`, a static function so the tests need no desktop), the editor
+taking keyboard focus; and, which the ReaScripts cannot do, the editor is an
+`image` to accessibility whose title is "ScaleView: <key>, playing <chord>",
+so VoiceOver can read it. `TestProcessorMidi.cpp` checks each. Whether a host
+passes S, O and Return to a plugin window, and whether VoiceOver reaches into
+it, is the host's business and unverified.
+
+**The final sweep** (21 October 2026, version 1.1.0, `docs/apple-hig-review.md`):
+an unlit circle has a `#6D7581` rim (`colourEdge`, 3.2:1 on the background),
+drawn as a filled circle under the fill so the only stroke is still the
+played-note ring; the face is `pickFace(installed, systemFaces())` - Segoe UI
+on Windows, JUCE's default elsewhere, because the Mac's San Francisco cannot
+be named safely through `Font`; the menus, being JUCE's drawing, take
+`MenuLook` - `#2A2F37` with a `#3A404A` edge, no stripes, words 7:1. New
+code: every `Font` through `textFont()`, every text colour 7:1, every shape
+that means something 3:1 on what it sits on.
 
 ## Environment
 
