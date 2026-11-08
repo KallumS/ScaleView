@@ -125,16 +125,17 @@ case, run both, `diff`:
   (C, Gb, F#, Cb major, A minor, D Dorian, Eb harmonic minor, Gb minor blues):
   541,908 names, byte-identical. The same rig against the *previous* Pro
   reports 1,231 differences, so it can see one.
-- **October 2026: Starting Blocks decides which roots a chord can have**
-  (Pro's `df4ea43`, its decision 0011): where the notes are a Starting
-  Blocks chord - one of its 78 chord types on any root, any of its notes in
-  the bass, or one of the key's own chords on its degrees - the name is on
-  one of Blocks' roots, the cost choosing between them. `Key` now carries
-  the selected root and scale (`rootPitchClass`, `scaleIndex`) for the key's
-  chords. Diffed against Pro over every one- to seven-note voicing in no key
-  and eight keys, plus the music21 core corpus's 37,106 distinct sonorities
-  in no key and seven keys: 457,336 names, byte-identical; the previous Pro
-  differs on 1,076 of the voicings.
+- **October 2026: Starting Blocks decided which roots a chord can have**
+  (Pro's `df4ea43`, its decision 0011; ported here in `b34d6f7`) - **and
+  November 2026: it is gone again.** Pro reversed 0011 in `f13f8a6` (1.3.0):
+  Blocks lists only complete chords, so a voicing with a note left out lost
+  its root to a complete chord with the same notes (C D E G A B read
+  `Amin11/C`, C D Bb `A#add9/C`). `b34d6f7` is reversed here, `Key` no longer
+  carries the key's Blocks chords, and the five pins Pro added for the names
+  0011 got wrong are in `TestScaleModel.cpp`. Diffed against Pro 1.3.0 over
+  every one- to seven-note voicing on every bass, plain and with the bass or
+  the top note doubled, in no key and seven keys: 427,776 names,
+  byte-identical; the copy with the dictionary differs on 25,824 of them.
 - **The four naming changes from the Scaler comparison** (dim9, two-note chords
   named by their third, the minor sixth against the half-diminished, and a
   third beating a shape with none): 82,478 voicings in six keys, **every

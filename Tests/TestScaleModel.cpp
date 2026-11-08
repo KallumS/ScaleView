@@ -240,10 +240,20 @@ int main()
             half-diminished on its third; and a shape with a third beats one
             without, even from an inversion. */
         std::printf ("what the Scaler comparison moved:\n");
-        check (none, { C4, C4 + 2, C4 + 3, C4 + 6, C4 + 9 }, "D7b9/C", "Blocks' D7b9 over its seventh - was Cdim9");
+        check (none, { C4, C4 + 2, C4 + 3, C4 + 6, C4 + 9 }, "Cdim9", "a dim7 with a ninth");
         check (none, { C4, C4 + 16, C4 + 18, C4 + 21 }, "F#min7b5/C",
                "A C E F# is the half-diminished");
         check (none, { C4, C4 + 3, C4 + 7, C4 + 9 }, "Cmin6", "root position stays");
+
+        /*  No chord list decides the root: ScaleView Pro's 0011 (Starting
+            Blocks as a dictionary) was reversed in f13f8a6. Blocks lists only
+            complete chords, so a voicing with a note left out lost its root. */
+        std::printf ("the reader decides the root, not a chord list:\n");
+        check (none, { C4, C4 + 2, C4 + 4, C4 + 7, C4 + 9, C4 + 11 }, "Cmaj13", "was Amin11/C");
+        check (none, { C4, C4 + 2, C4 + 3, C4 + 10 }, "Cmin9", "a shell, was A#add9Add11/C");
+        check (none, { C4, C4 + 2, C4 + 10 }, "C7sus2", "was A#add9/C");
+        check (none, { C4, C4 + 5, C4 + 11 }, "Cmaj7sus4", "was Fadd#11(no3)/C");
+        check (none, { 71, 77 }, "F B", "a tritone is an interval - was B(b5)(no3)");
         check (none, { 62, 63, 67, 69 }, "D#maj7b5/D", "was Dsus4b9, with no third");
         check (none, { 64, 70, 74 }, "A#(b5)/E", "was E7b5(no3), with none either");
         check (none, { 65, 69, 71 }, "F(b5)", "the case that rule came from");
@@ -276,22 +286,7 @@ int main()
             with - ScaleView Pro, October 2026. */
         std::printf ("a draw goes to the reading without a slash:\n");
         check (none, { C3, C4 + 2, C4 + 7, C4 + 10 }, "C7sus2", "was GminAdd11/C");
-        check (none, { C3, C4 + 2, C4 + 5, C4 + 7 }, "Dmin7(11)/C", "Blocks' quartal tetrad on D - was Csus4Add9");
-
-        /*  Blocks decides which roots a chord can have (ScaleView Pro,
-            October 2026): one of Starting Blocks' chord types on any root, in
-            any inversion, or one of the key's own chords on its degrees; the
-            reader's cost chooses between Blocks' roots as always. */
-        std::printf ("Blocks' roots:\n");
-        check (none, { C4, C4 + 3, C4 + 6, C4 + 11 }, "CminMaj7b5", "Blocks' diminished major seventh - was Baddb9/C");
-        check (none, { C3, 64, 67, 69 }, "C6", "I6 and vi7 over C are both Blocks chords: the cheaper reading");
-        check (none, { C4, C4 + 5, C4 + 7 }, "Csus4", "Csus4 stays, though Blocks builds Fsus2 over C too");
-        check (none, { 71, 77 }, "B(b5)(no3)", "B F is Blocks' fifth on B in C major");
-        check (none, { 65, 71 }, "B(b5)(no3)/F", "and over F, inverted");
-        check (keyFor ("Db", "Major"), { 71, 77 }, "F B", "in Db major Blocks builds no chord on B");
-        check (none, { 64, 74, 78, 81, 84 }, "D9/E", "a ninth chord's fourth inversion: the ninth in the bass");
-        check (none, { 60, 61, 63, 64, 68, 70 }, "Caug7b9#9", "Blocks' altered dominant on C - was A#min11b5/C");
-        check (none, { C4, C4 + 3, C4 + 4, C4 + 6, C4 + 7, C4 + 10 }, "F#13b5b9/C", "Blocks' 13b9b5 on F# - was C7#9#11");
+        check (none, { C3, C4 + 2, C4 + 5, C4 + 7 }, "Csus4Add9", "G7sus over C, was Dmin7(11)/C");
         check (none, { 45, C4, 64, 67 }, "Amin7", "a real difference in cost still decides");
 
         /*  A doubled degree of the key is read as root position. The bass is
@@ -344,8 +339,8 @@ int main()
         check (plain, { C4, C4 + 4, C4 + 7, C4 + 9, C4 + 10 }, "C7(13)", "");
         check (plain, { C4, C4 + 1, C4 + 4, C4 + 7, C4 + 9, C4 + 10 }, "C13b9",
                "an altered ninth still fills the stack");
-        check (plain, { C4, C4 + 4, C4 + 7, C4 + 8 }, "G#maj7#5/C",
-               "C E G Ab is Blocks' maj7#5 on Ab - was Caddb6");
+        check (plain, { C4, C4 + 4, C4 + 7, C4 + 8 }, "Caddb6",
+               "a flat sixth is a b6 until a seventh arrives");
         check (plain, { 55, 59, 62, 66, 77 }, "G7(maj7)",
                "both sevenths at once, bracketed");
         check (plain, { 69, 71, 77 }, "F(b5)/A",
